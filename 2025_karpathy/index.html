@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>深入理解大型語言模型｜中文重點與圖解</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // This report uses the template's own base styles, not Tailwind's reset.
+      if (window.tailwind) window.tailwind.config = { corePlugins: { preflight: false } };
+    </script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  
+<style>
+/* Lesson reading layout; original base-template tokens retained. */
+.kv-layout { display:grid; grid-template-columns:208px minmax(0,1fr); gap:42px; }
+.kv-aside { position:sticky; top:22px; align-self:start; max-height:calc(100vh - 44px); overflow-y:auto; padding:25px 0; }
+.kv-aside a { display:block; padding:9px 12px; margin:3px 0; color:var(--g700); font-size:13px; text-decoration:none; border-left:2px solid transparent; }
+.kv-aside a:hover,.kv-aside a[aria-current="location"] { border-color:var(--clay-d); background:var(--g100); color:var(--slate); }
+.kv-aside .kv-aside-title { font-size:12px; letter-spacing:.08em; margin:0 12px 16px; color:var(--g700); }
+.wrap { padding-bottom:100px; }
+header.masthead { padding-top:44px; padding-bottom:36px; }
+h1 { max-width:24ch; line-height:1.2; font-size:clamp(36px,4.5vw,64px); margin-top:28px; }
+h1 em { color:var(--clay-d); }
+h3 { font-family:var(--serif); font-size:21px; font-weight:600; line-height:1.45; margin:9px 0 12px; }
+p { margin:12px 0; }
+.kv-hero-grid { display:grid; grid-template-columns:minmax(0,1.5fr) minmax(250px,1fr); gap:38px; align-items:end; }
+.kv-hero-side { border-left:2px solid var(--clay); padding:0 0 0 26px; }
+.kv-hero-side strong { font-size:28px; font-family:var(--serif); font-weight:500; display:block; }
+.kv-hero-side p { color:var(--g700); font-size:14px; }
+.eyebrow { color:var(--g700); flex-wrap:wrap; }
+.vt-session-badge { border-radius:4px; margin-bottom:26px; }
+.kv-chips { display:flex; gap:8px; flex-wrap:wrap; margin:20px 0; }
+.kv-chips span { padding:5px 11px; font-size:12px; background:var(--g100); border:1px solid var(--g300); border-radius:6px; }
+.kv-grid { display:grid; gap:16px; margin-top:20px; }
+.kv-two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.kv-three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.card { min-width:0; }
+.card p { color:var(--g700); font-size:15px; line-height:1.85; }
+.kv-kicker { color:var(--clay-d); font-size:12px; font-weight:600; letter-spacing:.04em; display:block; }
+.kv-definition { padding:28px 32px; background:var(--clay-soft); border-left:4px solid var(--clay-d); border-radius:0 12px 12px 0; }
+.kv-big { font-family:var(--serif); font-size:clamp(25px,3vw,36px); line-height:1.6; }
+.kv-big strong { color:var(--clay-d); font-weight:600; }
+.kv-definition>p:last-child { max-width:65ch; color:var(--g700); }
+.kv-note,.kv-caution { padding:16px 20px; margin-top:20px; border:1px solid var(--g300); border-radius:8px; font-size:14px; line-height:1.85; color:var(--g700); }
+.kv-note { background:var(--g100); }
+.kv-caution { background:var(--yellow-soft); border-color:var(--yellow-border); }
+.kv-refs { margin-top:18px; font-size:12px; color:var(--g700); line-height:1.9; }
+.kv-refs a { display:inline; color:var(--clay-d); text-underline-offset:3px; margin-right:12px; overflow-wrap:anywhere; }
+.kv-stage-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+button { font:inherit; cursor:pointer; }
+.kv-stage { text-align:left; border:1.5px solid var(--g300); border-radius:10px; background:var(--paper); padding:20px; color:var(--slate); }
+.kv-stage strong { display:block; font-size:20px; margin:9px 0; }
+.kv-stage>span:last-child { font-size:13px; color:var(--g700); }
+.kv-stage[aria-pressed="true"] { background:var(--clay-soft); border-color:var(--clay-d); }
+.kv-stage-panel { margin-top:12px; }
+.kv-slots { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; }
+.kv-slots dt { font-size:12px; color:var(--clay-d); margin-bottom:8px; }
+.kv-slots dd { margin:0; font-size:15px; line-height:1.7; }
+.kv-chain { list-style:none; padding:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:20px; counter-reset:chain; }
+.kv-chain li { position:relative; padding:20px 16px; background:var(--g100); border-top:3px solid var(--g300); counter-increment:chain; }
+.kv-chain li::before { content:counter(chain,decimal-leading-zero); font:13px var(--mono); color:var(--clay-d); display:block; margin-bottom:12px; }
+.kv-chain li:not(:last-child)::after { content:"→"; position:absolute; right:-17px; top:40%; color:var(--g700); }
+.kv-chain b { display:block; margin-bottom:8px; }
+.kv-chain span { font-size:14px; color:var(--g700); }
+.figure { width:100%; max-width:100%; min-width:0; overflow-x:auto; background:var(--ivory); border:1px solid var(--g300); border-radius:10px; }
+.figure svg { display:block; width:100%; min-width:960px; height:auto; }
+svg text { font-family:var(--sans); font-size:12px; fill:var(--g700); }
+svg text.n { font-size:14px; font-weight:600; fill:var(--slate); }
+.kv-example { border:1.5px solid var(--g300); border-radius:14px; overflow:hidden; }
+.kv-problem { padding:28px; background:var(--g100); }
+.kv-walk { padding:28px; background:var(--paper); }
+.kv-step-buttons { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:25px; }
+.kv-step-buttons button { background:var(--paper); color:var(--g700); border:1px solid var(--g300); border-radius:7px; padding:9px 12px; font-size:14px; }
+.kv-step-buttons button[aria-pressed="true"] { color:var(--clay-d); border-color:var(--clay-d); background:var(--clay-soft); }
+.kv-equation { font:clamp(19px,3vw,27px) var(--mono); margin-top:22px; padding:17px 0; border-top:1px solid var(--g300); overflow-wrap:anywhere; }
+#walk-panel { min-height:185px; }
+#walk-panel p { max-width:70ch; line-height:1.85; }
+.reveal { border:1.5px solid var(--border); border-radius:10px; background:var(--bg-card); margin-top:12px; overflow:hidden; }
+.reveal>summary { cursor:pointer; padding:15px 18px; font-size:15px; color:var(--text-muted); display:flex; align-items:center; gap:12px; list-style:none; }
+.reveal>summary::-webkit-details-marker { display:none; }
+.reveal>summary::before { content:"▸"; color:var(--clay-d); font-size:12px; flex-shrink:0; }
+.reveal[open]>summary::before { transform:rotate(90deg); }
+.reveal>summary:hover { background:var(--bg-soft); color:var(--text); }
+.reveal-body { padding:8px 22px 22px; font-size:15px; line-height:1.9; color:var(--text-muted); border-top:1px dashed var(--border); }
+.reveal-body p { max-width:78ch; }
+.reveal-body ul { padding-left:20px; }
+.reveal-body li { margin:12px 0; }
+.kv-small { font-size:12px; color:var(--g700); line-height:1.8; }
+a { color:var(--clay-d); text-underline-offset:3px; }
+[hidden] { display:none!important; }
+:focus-visible { outline:3px solid var(--clay-d); outline-offset:4px; }
+.kv-mobile-nav { display:none; }
+.kv-export-dialog { width:min(680px,92vw); max-height:85vh; border:1px solid var(--g300); border-radius:12px; padding:24px; color:var(--slate); background:var(--ivory); }
+.kv-export-dialog::backdrop { background:rgba(20,20,19,.4); }
+.kv-export-dialog textarea { width:100%; height:220px; border:1px solid var(--g300); border-radius:6px; padding:12px; font:14px var(--sans); }
+.kv-export-actions { display:flex; flex-wrap:wrap; gap:12px; margin-top:14px; }
+.kv-export-actions button { padding:9px 16px; border:1px solid var(--g300); border-radius:6px; background:var(--paper); }
+.vt-comment-popup,.vt-comment-list { max-width:calc(100vw - 32px); }
+.vt-comment-trigger { max-width:calc(100vw - 16px); }
+footer.foot { color:var(--g700); }
+@media(max-width:1100px) {
+ .kv-layout { grid-template-columns:170px minmax(0,1fr); gap:24px; }
+ .wrap { padding-left:12px; padding-right:12px; }
+ .kv-three { grid-template-columns:1fr; }
+ .kv-stage { padding:15px; }
+ .kv-stage strong { font-size:17px; }
+}
+@media(max-width:760px) {
+ .kv-layout { display:block; }
+ .kv-aside { display:none; }
+ .kv-mobile-nav { display:block; margin-top:25px; }
+ .kv-mobile-nav summary { cursor:pointer; padding:12px 0; font-weight:600; }
+ .kv-mobile-nav nav { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+ .kv-mobile-nav a { padding:9px 6px; font-size:13px; }
+ .kv-hero-grid,.kv-two,.kv-stage-buttons,.kv-slots { grid-template-columns:1fr; }
+ .kv-hero-grid { gap:22px; }
+ .kv-hero-side { padding-left:18px; }
+ header.masthead { padding-top:22px; }
+ h1 { font-size:38px; }
+ section { margin-top:46px; }
+ .sec-head { gap:8px; align-items:flex-start; }
+ .sec-head .idx { width:28px; padding-top:7px; }
+ .sec-head h2 { font-size:25px; line-height:1.45; }
+ .sec-intro { margin-left:0; font-size:14px; line-height:1.8; }
+ .kv-definition,.card,.kv-problem,.kv-walk { padding:20px; }
+ .kv-stage { padding:14px 18px; }
+ .kv-stage strong { margin:5px 0; }
+ .kv-chain { grid-template-columns:1fr; gap:22px; }
+ .kv-chain li:not(:last-child)::after { content:"↓"; right:50%; top:auto; bottom:-23px; }
+ .reveal>summary { padding:14px 12px; font-size:14px; }
+}
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none!important; } }
+</style>
+</head>
+<body><div class="wrap"><a href="../index.html#collection" style="display:inline-block;margin-top:20px;font-size:14px;">← 回到知識庫</a><header class="masthead" id="top"><div class="eyebrow">中文重點與圖解 · 整理於 2026-09-10</div><div class="kv-hero-grid"><div><h1>文字框背後，<br>大型語言模型<br><em>如何學會回答？</em></h1><p class="intro">從網路文字到助理行為，從反覆續寫到回饋學習。讀懂訓練流程，也讀懂它為什麼有時驚人、有時失手。</p></div><div class="kv-hero-side"><strong>一條訓練主線<br>概念與圖解並讀</strong><p>先看中文重點與自製圖解，再透過互動示例理解訓練與推論；完整講解請回到 Karpathy 原影片。</p><p>依 Karpathy 講座整理。內容背景為 2025 年初，不是目前模型排行榜。</p></div></div><div class="kv-chips"><span>預訓練 → SFT → RL</span><span>概念流程 × 解題示範</span><span>公開摘要 · 不重刊逐字稿</span></div><details class="kv-mobile-nav"><summary>展開學習目錄</summary><nav aria-label="行動版學習目錄"><a href="#anchor">01 先抓住一句話</a><a href="#analogy">02 三個類比，搭一座理解的橋</a><a href="#map">03 從網路文字，到可用的助理</a><a href="#pretrain">04 預訓練</a><a href="#inference">05 推論</a><a href="#sft">06 SFT</a><a href="#rl">07 RL</a><a href="#rlhf">08 RLHF</a><a href="#example">09 跟著水果題，走一次作答過程</a><a href="#misconceptions">10 六個容易把模型想錯的地方</a><a href="#boundaries">11 邊界</a><a href="#deeper">12 想更深入</a><a href="#sources">13 講座來源與公開範圍</a></nav></details></header><div class="kv-layout"><aside class="kv-aside"><p class="kv-aside-title">學習目錄</p><nav aria-label="學習目錄"><a href="#anchor">01 先抓住一句話</a><a href="#analogy">02 三個類比，搭一座理解的橋</a><a href="#map">03 從網路文字，到可用的助理</a><a href="#pretrain">04 預訓練</a><a href="#inference">05 推論</a><a href="#sft">06 SFT</a><a href="#rl">07 RL</a><a href="#rlhf">08 RLHF</a><a href="#example">09 跟著水果題，走一次作答過程</a><a href="#misconceptions">10 六個容易把模型想錯的地方</a><a href="#boundaries">11 邊界</a><a href="#deeper">12 想更深入</a><a href="#sources">13 講座來源與公開範圍</a></nav></aside><main><section id="anchor"><div class="sec-head"><span class="idx">01</span><h2>先抓住一句話</h2></div><p class="sec-intro">你在文字框裡看到的回答，是多個訓練階段與當下上下文共同塑造的結果。</p><div class="kv-definition"><p class="kv-big">語言模型學會了文字的規律，<br>再被訓練成<strong>會回應你的助理</strong>。</p><p>它依據目前的文字序列，逐步產生後續文字。流暢、有自信，卻不等於已查證或一定正確。</p></div><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>訓練端</span><h3>先理解「怎麼學」</h3><p>預訓練建立知識與模式；監督式微調示範助理行為；強化學習用回饋改善表現。</p></article><article class="card"><span class=kv-kicker>使用端</span><h3>再理解「怎麼用」</h3><p>你提供的脈絡、模型的解碼方式與外部工具，會改變這次回答；不必假設每次聊天都在更新模型權重。</p></article></div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="analogy"><div class="sec-head"><span class="idx">02</span><h2>三個類比，搭一座理解的橋</h2></div><p class="sec-intro">類比幫助建立直覺，但不是模型的物理描述，也不能拿來推論意識。</p><div class="kv-grid kv-three"><article class="card"><span class=kv-kicker>學校類比</span><h3>讀教材 → 看例題 → 做練習</h3><p>預訓練接觸大量文字；SFT 看理想解答；RL 自己嘗試，再根據回饋改善。<strong>失準處：</strong>這是訓練方式的對照，不表示模型像人一樣學習。</p></article><article class="card"><span class=kv-kicker>記憶類比</span><h3>模糊記憶 ↔ 桌上的資料</h3><p>參數像先前留下的記憶；上下文像這次作答時能直接參考的資料。<strong>失準處：</strong>上下文有容量限制，也不是人類短期記憶的完整模型。</p></article><article class="card"><span class=kv-kicker>瑞士起司類比</span><h3>很強，卻有意外的洞</h3><p>能寫程式，不代表能穩定數出字母；會解難題，也可能在簡單任務上失手。<strong>失準處：</strong>「瑞士起司」只是能力不均勻的比喻，不是固定能力地圖。</p></article></div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="map"><div class="sec-head"><span class="idx">03</span><h2>從網路文字，到可用的助理</h2></div><p class="sec-intro">先看整體路徑。點選階段卡，對照「資料、目標、產物」；這是教學切換，不會執行訓練。</p><div class="kv-stage-buttons" role="group" aria-label="訓練階段"><button class="kv-stage" data-stage="0" aria-pressed="true" aria-controls="stage-panel"><span class="kv-kicker">階段 1</span><strong>預訓練</strong><span>接觸大量文字</span></button><button class="kv-stage" data-stage="1" aria-pressed="false" aria-controls="stage-panel"><span class="kv-kicker">階段 2</span><strong>監督式微調 SFT</strong><span>模仿理想示範</span></button><button class="kv-stage" data-stage="2" aria-pressed="false" aria-controls="stage-panel"><span class="kv-kicker">階段 3</span><strong>強化學習 RL</strong><span>依照回饋改善</span></button></div><div id="stage-panel" class="card kv-stage-panel" aria-live="polite"><h3>預訓練：先學會文字的規律</h3><dl class="kv-slots"><div><dt>資料</dt><dd>經過篩選的網頁與其他文字</dd></div><div><dt>目標</dt><dd>提高真實下一個詞元的預測機率</dd></div><div><dt>產物</dt><dd>擅長續寫、但不一定遵循指令的基礎模型</dd></div></dl></div><div class="kv-note">SFT 與 RL 都屬於後訓練。這是課程的概念拆解，不代表每家模型都使用完全相同的順序、資料或演算法。</div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="pretrain"><div class="sec-head"><span class="idx">04</span><h2>預訓練：把資料規律寫進參數</h2></div><p class="sec-intro">訓練不是把網頁裝進搜尋引擎，而是調整一個大型數學函數，讓它更能預測文字。</p><ol class="kv-chain"><li><b>蒐集與清理</b><span>網頁正文、語言篩選、去重、個資處理</span></li><li><b>轉成詞元</b><span>文字片段對應離散 ID</span></li><li><b>學下一個詞元</b><span>用資料中的後續文字作標籤</span></li><li><b>更新參數</b><span>在大量批次中反覆調整權重</span></li></ol><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>表示方式</span><h3>詞元不是一個中文字，也不是一個單字</h3><p>Token（詞元）是分詞器使用的文字單位。常見片段合併可縮短序列，但會增加詞彙表大小；空格、大小寫與語言都可能影響切分。</p></article><article class="card"><span class=kv-kicker>訓練訊號</span><h3>損失下降，不是「真實性保證」</h3><p>Loss（損失）衡量預測表現。GPU 加速大量平行運算；更多算力讓研究者處理更多資料、嘗試更大模型，但不能單憑訓練損失推論事實正確率。</p></article></div><details class="reveal"><summary>為什麼資料篩選也在決定模型擅長什麼？</summary><div class="reveal-body"><p>講座以 FineWeb 說明：來源、品質、語言比例、去重方式，都是資料設計選擇。大量排除某語言，其能力就可能較弱。這是資料分布的影響，不是模型對所有語言天生等強。</p><p>GPT-2 重現、H100 租用與訓練成本下降，是講者用來說明資料、硬體、軟體共同演進的例子。本文不把當時的成本、規模與產品名稱整理成今日排行榜。</p></div></details><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="inference"><div class="sec-head"><span class="idx">05</span><h2>推論：反覆續寫，不是反覆重訓</h2></div><p class="sec-intro">每次生成，模型根據目前上下文提出下一個詞元的分布；選出的詞元接回上下文，再繼續。</p><div class="figure" tabindex="0" aria-label="生成時，新增的是上下文；窄螢幕可左右捲動"><svg viewBox="0 0 960 280" role="img" aria-labelledby="infer-title infer-desc"><title id="infer-title">生成時，新增的是上下文</title><desc id="infer-desc">上下文送入固定權重的模型，得到下一個詞元的分布，選出詞元後回接上下文，再重複。</desc><defs><marker id="infer-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#87867f"/></marker></defs><rect width="960" height="280" fill="#faf9f5"/><g class="edge" data-from="infer-0" data-to="infer-1" data-label=""><path class="ln" d="M 220,116 H 270" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#infer-arrow)"/></g><g class="edge" data-from="infer-1" data-to="infer-2" data-label=""><path class="ln" d="M 450,116 H 500" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#infer-arrow)"/></g><g class="edge" data-from="infer-2" data-to="infer-3" data-label=""><path class="ln" d="M 680,116 H 730" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#infer-arrow)"/></g><g class="edge" data-from="infer-3" data-to="infer-0" data-label="接回上下文，繼續生成；權重不變"><path class="ln" d="M 820,152 V 212 Q 820,220 812,220 H 138 Q 130,220 130,212 V 152" fill="none" stroke="#87867f" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#infer-arrow)"/></g><g class="elabel"><rect x="330" y="180" width="300" height="28" fill="#faf9f5"/><text x="480" y="199" text-anchor="middle">接回上下文，繼續生成；權重不變</text></g><g class="node" data-id="infer-0" data-kind="ours" data-title="目前上下文" transform="translate(40,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">目前上下文</text><text x="90" y="50" text-anchor="middle">問題、前文與已生成內容</text></g><g class="node" data-id="infer-1" data-kind="ours" data-title="固定權重模型" transform="translate(270,80)"><rect class="box" width="180" height="72" rx="6" fill="#fbe9df" stroke="#d97757"/><text class="n" x="90" y="28" text-anchor="middle">固定權重模型</text><text x="90" y="50" text-anchor="middle">進行一次前向運算</text></g><g class="node" data-id="infer-2" data-kind="ours" data-title="下一詞元分布" transform="translate(500,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">下一詞元分布</text><text x="90" y="50" text-anchor="middle">各候選的可能性</text></g><g class="node" data-id="infer-3" data-kind="ours" data-title="選出下一詞元" transform="translate(730,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">選出下一詞元</text><text x="90" y="50" text-anchor="middle">依解碼方式產生</text></g></svg></div><p class="kv-small">依講座整理的概念流程；箭頭表示資訊或更新的流向，不表示數量。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>持久學到的規律</span><h3>訓練改變的是權重</h3><p>資料提供學習訊號，演算法更新參數；得到一個之後可用來推論的模型。</p></article><article class="card"><span class=kv-kicker>當下可參考的內容</span><h3>這次對話改變的是上下文</h3><p>問題、前文、示範與工具結果一起影響續答。少樣本提示是在當下提供模式，不等於更新權重。</p></article></div><div class="kv-note">抽樣可讓同一提示得到不同回答；不同解碼設定的行為也不同。不要把「所有回答必然隨機」當成通則。</div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="sft"><div class="sec-head"><span class="idx">06</span><h2>SFT：示範什麼才像一位助理</h2></div><p class="sec-intro">基礎模型學會續寫網路文字；對話資料則把它引導成能問答、遵循要求與適當拒絕的系統。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>基礎模型</span><h3>只會接著寫</h3><p>看到「2 + 2 等於幾？」後，基礎模型可能繼續一整段網頁式內容，而非停在你需要的回答。</p></article><article class="card"><span class=kv-kicker>助理模型</span><h3>依照角色完成回合</h3><p>資料示範使用者的問題與理想助理回答；角色及回合邊界，也要以模型可理解的序列格式表示。</p></article></div><ol class="kv-chain"><li><b>訂出行為指引</b><span>有幫助、誠實、適當拒絕</span></li><li><b>建立對話示範</b><span>人類標註；也可由模型輔助再編修</span></li><li><b>延續訓練</b><span>讓基礎模型學會理想回應</span></li></ol><details class="reveal"><summary>「模擬人類標註者」這個說法的邊界</summary><div class="reveal-body"><p>這能解釋示範資料如何影響用字、禮貌、風格與拒絕方式；它不代表模型只會逐字複製，也不涵蓋後續強化學習的全部能力。對話協定依模型而異，不應把講座的特殊標記示意當成可直接執行的 API 格式。</p></div></details><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="rl"><div class="sec-head"><span class="idx">07</span><h2>RL：不只模仿，也從嘗試中改善</h2></div><p class="sec-intro">從已有模型出發，讓它嘗試不同解法，再用回饋調整參數。重點是學到哪些作答策略更有效。</p><div class="figure" tabindex="0" aria-label="訓練時，更新的是模型參數；窄螢幕可左右捲動"><svg viewBox="0 0 960 280" role="img" aria-labelledby="learn-title learn-desc"><title id="learn-title">訓練時，更新的是模型參數</title><desc id="learn-desc">模型對題目嘗試解答，評估回饋引導參數更新；更新後模型繼續在練習題上嘗試。</desc><defs><marker id="learn-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#87867f"/></marker></defs><rect width="960" height="280" fill="#faf9f5"/><g class="edge" data-from="learn-0" data-to="learn-1" data-label=""><path class="ln" d="M 220,116 H 270" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#learn-arrow)"/></g><g class="edge" data-from="learn-1" data-to="learn-2" data-label=""><path class="ln" d="M 450,116 H 500" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#learn-arrow)"/></g><g class="edge" data-from="learn-2" data-to="learn-3" data-label=""><path class="ln" d="M 680,116 H 730" fill="none" stroke="#87867f" stroke-width="1.4" marker-end="url(#learn-arrow)"/></g><g class="edge" data-from="learn-3" data-to="learn-0" data-label="更新後的模型，繼續在題目上練習"><path class="ln" d="M 820,152 V 212 Q 820,220 812,220 H 138 Q 130,220 130,212 V 152" fill="none" stroke="#87867f" stroke-width="1.4" stroke-dasharray="5,4" marker-end="url(#learn-arrow)"/></g><g class="elabel"><rect x="330" y="180" width="300" height="28" fill="#faf9f5"/><text x="480" y="199" text-anchor="middle">更新後的模型，繼續在題目上練習</text></g><g class="node" data-id="learn-0" data-kind="ours" data-title="現有模型" transform="translate(40,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">現有模型</text><text x="90" y="50" text-anchor="middle">以練習題為輸入</text></g><g class="node" data-id="learn-1" data-kind="ours" data-title="多次嘗試" transform="translate(270,80)"><rect class="box" width="180" height="72" rx="6" fill="#fbe9df" stroke="#d97757"/><text class="n" x="90" y="28" text-anchor="middle">多次嘗試</text><text x="90" y="50" text-anchor="middle">探索不同作答方式</text></g><g class="node" data-id="learn-2" data-kind="ours" data-title="評估解答" transform="translate(500,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">評估解答</text><text x="90" y="50" text-anchor="middle">答案或其他回饋訊號</text></g><g class="node" data-id="learn-3" data-kind="ours" data-title="更新參數" transform="translate(730,80)"><rect class="box" width="180" height="72" rx="6" fill="#ffffff" stroke="#87867f"/><text class="n" x="90" y="28" text-anchor="middle">更新參數</text><text x="90" y="50" text-anchor="middle">提高有效行為的機會</text></g></svg></div><p class="kv-small">依講座整理的概念流程；箭頭表示資訊或更新的流向，不表示數量。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>看例題</span><h3>SFT：有人寫好示範</h3><p>學習專家提供的解法、格式與互動習慣。資料品質很重要，但人類未必知道哪種詞元序列最利於模型運算。</p></article><article class="card"><span class=kv-kicker>做練習</span><h3>RL：模型自己嘗試</h3><p>同題可生成不同解法；利用可核對答案或評分訊號，讓更有效的行為在後續更常出現。</p></article></div><div class="kv-note">圖中是直覺化流程，不是完整 RL 演算法。講座提到「挑成功解法再訓練」是簡化說明；不是只要重問很多次，就已經完成強化學習。</div><details class="reveal"><summary>推理模型為什麼會花更多時間？</summary><div class="reveal-body"><p>講座以 DeepSeek R1 描述：訓練中出現重新檢查、回頭修正與換角度等策略。較長的作答可提供更多中間計算空間，但「更長」不是品質保證，也不能把可見文字等同人類意識。</p><p>AlphaGo 第 37 手提供「超越示範分布」的類比；圍棋有明確規則與勝負，開放語言任務不一定有同等清楚的回饋。這不是語言模型必定超越人類的證明。</p></div></details><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="rlhf"><div class="sec-head"><span class="idx">08</span><h2>RLHF：偏好評分，不等於真實答案</h2></div><p class="sec-intro">數學可核對答案；笑話、詩與風格通常沒有唯一標準，因此需要另一種回饋來源。</p><ol class="kv-chain"><li><b>人類比較候選</b><span>哪一個回答更符合偏好？</span></li><li><b>學出獎勵模型</b><span>預測人類可能怎麼排序</span></li><li><b>大量提供評分</b><span>用代理訊號引導助理訓練</span></li></ol><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>回饋從哪裡來</span><h3>好處：比較往往比創作容易</h3><p>人類可能難以寫出好詩，卻能比較兩首詩。模型以偏好資料學習評分，降低每次訓練都找人評閱的成本。</p></article><article class="card"><span class=kv-kicker>最佳化錯了目標</span><h3>風險：高分可能是在鑽漏洞</h3><p>獎勵模型只是人類偏好的近似。持續追求代理分數，可能產生人不喜歡、評分器卻給高分的回答，也就是獎勵作弊。</p></article></div><div class="kv-note"><strong>要分清楚：</strong>可驗證答案檢查的是特定任務結果；偏好模型預測的是人類評價。兩者都需要檢查回饋是否真的對準目標。</div><details class="reveal"><summary>講座說「RLHF 不是真正的 RL」，該怎麼讀？</summary><div class="reveal-body"><p>這是講者強調代理獎勵限制的修辭，正文仍承認它屬於強化學習。不要把它整理成分類定義；同樣地，「可驗證 RL 可以無限運行」是理想化對比，不代表訓練沒有成本、沒有上限或必定改善。</p><p>「比較比創作容易，所以 RLHF 有效」是講者提出的解釋與猜測，不是已充分證明的唯一原因。</p></div></details><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="example"><div class="sec-head"><span class="idx">09</span><h2>跟著水果題，走一次作答過程</h2></div><p class="sec-intro">同一題看三件事：題目如何進入上下文、中間結果有什麼用，以及何時交給工具。</p><div class="kv-example"><div class="kv-problem"><span class="kv-kicker">講座中的示範題目</span><h3>3 個蘋果 ＋ 2 個橘子，共 13 美元</h3><p>每個橘子 2 美元。每個蘋果多少錢？</p><div class="kv-equation">3a + 2 × 2 = 13</div></div><div class="kv-walk"><div class="kv-step-buttons" role="group" aria-label="水果題解題步驟"><button data-walk="0" aria-pressed="true" aria-controls="walk-panel">1 讀題</button><button data-walk="1" aria-pressed="false" aria-controls="walk-panel">2 中間結果</button><button data-walk="2" aria-pressed="false" aria-controls="walk-panel">3 檢查答案</button><button data-walk="3" aria-pressed="false" aria-controls="walk-panel">4 工具核對</button></div><div id="walk-panel" aria-live="polite"><span class="kv-kicker">上下文</span><h3>先保留題目的全部條件</h3><p>總額 13 美元、橘子 2 個、每個 2 美元、蘋果 3 個。這些文字會被轉成詞元序列，提供模型作答。</p><div class="kv-equation">未知數 a ＝ 蘋果單價</div></div></div></div><div class="kv-note">此互動是原題的教學拆解，不是真實模型推論，也沒有模擬分詞器或虛構詞元機率。程式可核對算術，但仍要確認公式正確反映題意。</div><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>為何不要只逼短答</span><h3>中間結果是額外的計算空間</h3><p>複雜工作分解為較簡單的步驟，可減少一次直接猜最終答案的負擔；並非每題都必須長篇作答。</p></article><article class="card"><span class=kv-kicker>為何工具有幫助</span><h3>工具把運算交給真正的執行器</h3><p>模型撰寫程式，外部執行器計算，再把結果交回模型。寫出程式不等於已執行；兩者要分開確認。</p></article></div><p class="kv-caution">編輯註記：本例依題目的 13 美元總額計算：13 − 4 ＝ 9，並將答案代回原條件核對；不沿用轉錄文字中的算式錯誤。</p><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="misconceptions"><div class="sec-head"><span class="idx">10</span><h2>六個容易把模型想錯的地方</h2></div><p class="sec-intro">把「看起來像」與「實際機制」分開，才能選對檢查方式。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>誤解 01</span><h3>會續寫 ≠ 正在查資料</h3><p>參數裡的知識是訓練留下的統計記憶；沒有工具回傳證據，就不能假設已搜尋或核實。</p></article><article class="card"><span class=kv-kicker>誤解 02</span><h3>語氣自信 ≠ 知道答案</h3><p>回答格式可以學得很像專家，即使內容是捏造的。訓練承認不確定能緩解，但不能保證零幻覺。</p></article><article class="card"><span class=kv-kicker>誤解 03</span><h3>上下文學習 ≠ 更新權重</h3><p>給範例能引導這次輸出；與用資料更新參數是兩種機制。產品的儲存記憶功能也不能直接等同模型重訓。</p></article><article class="card"><span class=kv-kicker>誤解 04</span><h3>自稱某模型 ≠ 身份證明</h3><p>模型名稱可受示範資料或系統指令影響；不能用一句自我介紹證明真正的提供者或底層版本。</p></article><article class="card"><span class=kv-kicker>誤解 05</span><h3>能寫程式 ≠ 必定會數字母</h3><p>詞元不直接等同字元。拼字、數點、長數字運算等任務，可能需要拆解或交給工具。</p></article><article class="card"><span class=kv-kicker>誤解 06</span><h3>推理更久 ≠ 一定更正確</h3><p>較多步驟可能有幫助，也可能繼續沿著錯路走。答案仍需核對，不因附了長篇推導就自動可信。</p></article></div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="boundaries"><div class="sec-head"><span class="idx">11</span><h2>邊界：什麼時候一定要停下來檢查</h2></div><p class="sec-intro">對重要成果負責的仍然是使用者。工具提高可核對性，不把模型變成零風險系統。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>回查證據</span><h3>事實、引文與最新資訊</h3><p>提供原文或使用搜尋；確認引用內容真的支持結論。來源可靠性與模型是否忠實整理，都要檢查。</p></article><article class="card"><span class=kv-kicker>核對運算</span><h3>算術、計數與精確轉換</h3><p>請工具實際執行，檢查輸入是否完整、程式是否正確、結果是否符合單位與條件。</p></article><article class="card"><span class=kv-kicker>監督流程</span><h3>長篇內容與長任務</h3><p>上下文有限。長時程代理還涉及工具、執行狀態與人類監督；不能把一次漂亮回答當成能獨立完成全部工作。</p></article><article class="card"><span class=kv-kicker>不要過度外推</span><h3>創作、推理與能力遷移</h3><p>數學或程式的強化學習提升，不自動保證創作也提升。講者將遷移效果與新推理策略視為開放問題。</p></article></div><div class="kv-caution"><strong>這是一份歷史課程導覽。</strong>逐字稿明示「截至 2025 年初」。檔頭的 2026-09-03 是文件生成標示，不是影片發布日期，也不代表內容更新到當時。本文未做外部事實查核，不將產品價格、模型排行、訓練成本或未來預測當成目前現況。</div><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></section><section id="deeper"><div class="sec-head"><span class="idx">12</span><h2>想更深入：把課程接回實務</h2></div><p class="sec-intro">以下補充仍依同一講座整理，與上方概念解說一併閱讀。</p><div class="kv-grid kv-two"><article class="card"><span class=kv-kicker>閱讀路線 A</span><h3>第一次讀：沿著主線走</h3><p>先看三個訓練階段，再走水果題，最後看誤解與邊界。記住「資料、權重、上下文、工具、回饋」各自扮演什麼角色。</p></article><article class="card"><span class=kv-kicker>閱讀路線 B</span><h3>複習時：由問題回找來源</h3><p>想知道幻覺、RLHF 或工具怎麼用？可先閱讀下方補充，再透過來源連結觀看原講座，確認完整脈絡。</p></article></div><details class="reveal"><summary>幻覺的兩條緩解路徑：承認不知道，以及把資料找回來</summary><div class="reveal-body"><p>第一條是以可對照答案的問題探測模型，加入「不知道」的訓練示例。第二條是使用搜尋等工具，把找到的材料放入上下文再回答。兩條路徑分別改善不確定性的表達與作答依據；都不是消除幻覺的完整保證。</p><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></div></details><details class="reveal"><summary>多模態與代理：文字之外的輸入，更長的任務</summary><div class="reveal-body"><p>講座談到把影像片段與音訊表示納入序列，以及能操作電腦、執行更長流程的代理。重點不只是「會說」，還包括接收不同形式的資訊、呼叫工具與持續監督。</p><p>測試時學習與有限上下文，是講者提出的研究方向；不要把睡眠類比或未來展望當成已經實現的系統設計。</p><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></div></details><details class="reveal"><summary>選模型：用你的任務比較，不只看排行榜</summary><div class="reveal-body"><p>講者將一般助理用於多數日常問題，把較慢的推理模型留給困難數學與程式任務。這是個人使用經驗，不是所有任務的比例建議。</p><p>雲端服務、開放權重與本地小模型提供不同使用方式。蒸餾是學習另一模型的行為；降低數值精度是另一種縮減資源需求的方法，不能混為一談。本文不驗證或推薦講座中的歷史網址。</p><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></div></details><details class="reveal"><summary>轉錄疑點：哪些內容沒有被整理成確定事實？</summary><div class="reveal-body"><ul><li>資料容量混用 TB、兆位元組與太位元；Llama 參數量前後不一致，因此不做規模比較圖。</li><li>分詞工具的 hello world 描述前後矛盾，不據此提供真實分詞結果。</li><li>水果題「三十減四等於九」依完整題目標明應為 13 − 4 ＝ 9。</li><li>「聖經經文神經元」的解釋是講者轉述且未讀論文，不當成已確立因果。</li><li>DeepSeek／OpenAI 的公司與託管描述混雜，不推論為同一模型；模型名稱、示意標記與網址也可能有辨識錯誤。</li><li>RLHF「不是真正 RL」、可驗證 RL「無限運行」保留修辭與理想化限制，不當成演算法定義。</li></ul><div class="kv-refs">講座來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">觀看 Karpathy 原影片</a> · <a href="#sources">公開範圍與來源說明</a></div></div></details></section><section id="sources"><div class="sec-head"><span class="idx">13</span><h2>講座來源與公開範圍</h2></div><p class="sec-intro">本頁公開中文編輯筆記、概念圖與互動解說；完整逐字稿與原講座截圖不在本站重刊。</p><div class="card"><h3>Andrej Karpathy · Deep Dive into LLMs like ChatGPT</h3><p>原講座發布於 2025 年 2 月 5 日。需要完整脈絡、示範與講者原話時，請觀看 <a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">Karpathy 官方 YouTube 原影片</a>。</p><p class="kv-small">原影片及其內容權利歸原權利人；來源連結與工具致謝不表示已取得重製授權。本頁為非官方學習整理，圖解為另行製作，編輯解說不代表講者逐字表述，亦未逐項完成外部查核。</p></div></section></main></div><footer class="foot"><div><span class="k">把模型當工具，把證據留在手邊。</span><p>來源：<a href="https://www.youtube.com/watch?v=7xTGNNLPyMI">Andrej Karpathy 原講座</a> · 中文筆記與圖解為編輯整理，非官方逐字稿；完整逐字稿與原講座截圖不重刊。<br>視覺化工具：<a href="https://github.com/chenjackle45/html-visualizer">html-visualizer</a>；錄製排程工作流程參考：<a href="https://github.com/shuotao/au2026">au2026</a>（工具致謝不代表內容授權）。</p><p>本頁含 Tailwind CDN，載入會連網；不宣稱完全離線。評論只儲存在此瀏覽器，不會寫入 HTML 或自動傳送；可預覽後複製帶走。</p></div><a href="#top">回到頂部</a></footer></div><dialog class="kv-export-dialog" id="comment-export" aria-labelledby="comment-export-title"><h2 id="comment-export-title">預覽評論</h2><label for="comment-export-text">即將複製的內容</label><textarea id="comment-export-text" readonly></textarea><p id="comment-export-status" role="status"></p><div class="kv-export-actions"><button id="comment-export-copy">確認複製</button><button id="comment-export-close">關閉</button></div></dialog><script>
+const stageData = [{"title": "預訓練：先學會文字的規律", "slots": ["經過篩選的網頁與其他文字", "提高真實下一個詞元的預測機率", "擅長續寫、但不一定遵循指令的基礎模型"]}, {"title": "SFT：學習理想助理的回應方式", "slots": ["經過策展的理想對話與回答示範", "模仿有幫助、誠實且合適的回應", "能以助理角色互動的模型"]}, {"title": "RL：利用回饋改善自己的作答策略", "slots": ["練習題、模型嘗試的答案與評分訊號", "調整參數，讓更有效的行為更常出現", "在被訓練任務上改善的模型；不保證全面可靠"]}];
+const walkData = [["上下文", "先保留題目的全部條件", "總額 13 美元、橘子 2 個、每個 2 美元、蘋果 3 個。這些文字會被轉成詞元序列，提供模型作答。", "未知數 a ＝ 蘋果單價"], ["中間結果", "先把橘子的費用分離", "橘子合計 4 美元，從 13 美元中扣除，剩下 9 美元是三個蘋果的費用。把中間結果寫出來，後續步驟就能利用它。", "2 × 2 = 4；13 − 4 = 9"], ["答案與代回", "一個蘋果 3 美元，代回再看一次", "9 美元除以 3 個蘋果，得到單價 3 美元。代回原條件：3 個蘋果加上 2 個橘子，總價確實是 13 美元。", "a = 9 ÷ 3 = 3；3 × 3 + 2 × 2 = 13"], ["工具核對", "把精確算術交給執行器", "下方按鈕使用本頁 JavaScript 實際計算原題，作為工具計算的簡單類比；不是呼叫 LLM，也不是 Python 執行紀錄。公式仍須由人確認。", "(13 − 2 × 2) ÷ 3"]];
+const stageButtons = Array.from(document.querySelectorAll('[data-stage]'));
+const stagePanel = document.getElementById('stage-panel');
+stageButtons.forEach(button => button.addEventListener('click', () => {
+ const index = Number(button.dataset.stage), data = stageData[index];
+ stageButtons.forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+ stagePanel.querySelector('h3').textContent = data.title;
+ stagePanel.querySelectorAll('dd').forEach((dd,i) => dd.textContent = data.slots[i]);
+}));
+const walkButtons = Array.from(document.querySelectorAll('[data-walk]'));
+const walkPanel = document.getElementById('walk-panel');
+walkButtons.forEach(button => button.addEventListener('click', () => {
+ const index = Number(button.dataset.walk), data = walkData[index];
+ walkButtons.forEach(b => b.setAttribute('aria-pressed', String(b === button)));
+ walkPanel.replaceChildren();
+ ['span','h3','p','div'].forEach((tag,i) => {
+   const node = document.createElement(tag); node.textContent = data[i];
+   if(i===0) node.className='kv-kicker'; if(i===3) node.className='kv-equation';
+   walkPanel.appendChild(node);
+ });
+ if(index === 3) {
+   const run = document.createElement('button'); run.className='kv-stage'; run.textContent='計算並核對原題';
+   const result = document.createElement('p'); result.setAttribute('role','status');
+   run.addEventListener('click', () => {
+     const price = (13 - 2 * 2) / 3;
+     result.textContent = `本頁實際運算：蘋果單價 ${price} 美元；代回總額 ${3 * price + 2 * 2} 美元。`;
+   });
+   walkPanel.append(run,result);
+ }
+}));
+const navLinks=Array.from(document.querySelectorAll('.kv-aside a'));
+const observer=new IntersectionObserver(entries=>{
+ for(const entry of entries) if(entry.isIntersecting) {
+  navLinks.forEach(a=>{if(a.hash==='#'+entry.target.id)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});
+ }
+},{rootMargin:'-8% 0px -65% 0px'});
+document.querySelectorAll('main>section').forEach(section=>observer.observe(section));
+const exportDialog=document.getElementById('comment-export');
+window.kvPreviewComments=function(){
+ document.getElementById('comment-export-text').value=window.vtCollectComments().replace(/^\n\n---\n\n/,'');
+ document.getElementById('comment-export-status').textContent='先確認內容，再複製；不會自動傳送。';
+ exportDialog.showModal();
+};
+document.getElementById('comment-export-close').addEventListener('click',()=>exportDialog.close());
+document.getElementById('comment-export-copy').addEventListener('click',async()=>{
+ const box=document.getElementById('comment-export-text');
+ const ok=await window.vtCopyText(box.value);
+ document.getElementById('comment-export-status').textContent=ok?'已複製。可貼回對話提出問題。':'瀏覽器未允許自動複製；已選取文字，請按 Cmd+C 或 Ctrl+C。';
+ if(!ok){box.focus();box.select();}
+});
+</script>    <style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger">評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea
+        id="vt-popup-textarea"
+        placeholder="對這段文字的評論 / 疑問 / 補充..."
+      ></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button
+          ><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+      評論 <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback">預覽與複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", () => {
+          if (c.length) window.kvPreviewComments();
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Karpathy 2025", id: "karpathy-2025", project: "2025_karpathy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  </body>
+</html>

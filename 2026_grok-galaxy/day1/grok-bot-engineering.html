@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grok Bot for Engineering｜第一天學習筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script><style>
+html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-underline-offset:4px}button,input{font:inherit}button,a,summary{touch-action:manipulation}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}button{cursor:pointer}h1{max-width:23ch;overflow-wrap:anywhere}h2,h3{overflow-wrap:anywhere}h3{font-size:21px;font-weight:650;margin:0 0 12px}p{margin:0 0 14px;max-width:72ch}.wrap{padding:0 24px 70px}header.masthead{padding:28px 0 40px}.g-back{display:inline-block;margin:20px 0}.g-hero{display:block}.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.g-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.g-grid>*,.g-hero>*,.g-three>*{min-width:0}.g-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.g-meta span{background:var(--g100);padding:5px 12px;border-radius:6px;font-size:13px;color:var(--g700)}.g-lead{font-size:20px;color:var(--g700);max-width:60ch}.g-note{background:var(--g100);border-left:3px solid var(--clay);padding:18px 22px;border-radius:0 8px 8px 0;margin-top:22px;font-size:14px;color:var(--g700)}.g-time{font:13px var(--mono);white-space:nowrap;display:inline-block;border-bottom:1px solid var(--oat);text-decoration:none;margin:6px 0}.g-cite{margin-top:16px}.g-chapter{display:block;text-decoration:none;color:inherit;transition:border-color .15s}.g-chapter:hover{border-color:var(--clay)}.g-chapter small{font:12px var(--mono);color:var(--clay-d)}.g-chapter h3{margin:10px 0}.g-concept{margin-top:22px}.g-concept .g-example{background:var(--g100);padding:18px;border-radius:8px;margin-top:16px}.g-concept blockquote{border-left:3px solid var(--oat);margin:16px 0 0;padding:10px 16px;color:var(--g700);font-size:15px;overflow-wrap:anywhere}.g-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:step}.g-flow li{counter-increment:step;position:relative;padding:24px 24px 24px 65px;background:var(--paper);border:1.5px solid var(--g300);border-radius:12px;min-width:0}.g-flow li:before{content:counter(step,decimal-leading-zero);position:absolute;left:20px;top:24px;font:18px var(--mono);color:var(--clay-d)}.g-term dt{font-weight:700;margin-bottom:8px}.g-term dd{margin:0;color:var(--g700)}.g-term{margin:0}.g-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.g-button{border:1px solid var(--g300);border-radius:8px;padding:10px 16px;background:var(--paper);color:var(--slate);text-decoration:none;font-size:14px;display:inline-block}.g-button.primary{background:var(--slate);color:var(--ivory);border-color:var(--slate)}.g-small{font-size:13px;color:var(--g700)}.g-status{min-height:26px;margin:10px 0;color:var(--g700);font-size:14px}.g-dialog{max-width:750px;width:92vw;border:1px solid var(--g300);border-radius:14px;padding:26px;background:var(--ivory);color:var(--slate)}.g-dialog::backdrop{background:rgba(20,20,19,.6)}.g-dialog textarea{width:100%;height:45vh;resize:vertical;padding:15px;border:1px solid var(--g300);border-radius:8px;font:14px/1.7 var(--sans);color:var(--slate);background:var(--paper)}.g-topnav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px}.g-topnav a{font-size:14px}.vt-comment-list{max-width:calc(100vw - 32px)}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-session-badge{border-radius:6px;letter-spacing:0}.sec-head{align-items:flex-start}.sec-head h2{line-height:1.35}.g-boundary p:last-child{margin-bottom:0}
+.g-hero h2{font-size:23px;font-weight:650;line-height:1.45;margin:18px 0}.g-note details{margin-top:12px}.g-note summary{cursor:pointer;font-weight:650}.g-note li{max-width:72ch;margin:10px 0}.g-note ul{padding-left:24px}
+
+@media(max-width:800px){.g-hero,.g-three{grid-template-columns:1fr}.g-grid,.g-flow{grid-template-columns:1fr}.g-hero{gap:22px}.wrap{padding:0 10px 70px}header.masthead{padding-top:16px}h1{font-size:38px;line-height:1.15}.g-lead{font-size:18px}section{margin-top:48px}.card{padding:20px}.g-flow li{padding-right:18px}.sec-head{gap:10px}.sec-head h2{font-size:25px}.g-meta span{font-size:12px}.g-toolbar>*{max-width:100%}}
+@media print{.g-toolbar,.g-topnav,.vt-comment-trigger,.vt-comment-pill,.g-dialog{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}h1{font-size:36px}}
+</style></head><body><main class="wrap"><nav aria-label="書庫與活動導覽"><a class="g-back" href="../../index.html#collection">← 回到知識庫</a> · <a href="../index.html">Grok Galaxy 活動總覽</a></nav><header class="masthead"><div class="eyebrow">DAY 1 / 2026.09.16 / 講題學習筆記</div><div class="g-hero"><div><h1>Grok Bot for Engineering</h1><h2>讓工程代理帶隊：從重現故障、追蹤急件，到附上修復證據</h2><p class="g-lead">本場把 Grok Bot 放在工程協作的管理層：由它啟動與督導雲端程式設計代理，讓各 Bot 交接知識、共用作業手冊，並以截圖、效能數據與實際操作判斷成果。人仍須定義產品方向、拒絕不合適需求、處理授權；真正可委派的不是一句「趕快修好」，而是有明確邊界與成功訊號的工作流程。</p><div class="g-meta"><span>議程講者：Lingxi Li</span><span>表定台灣時間 03:30–05:00</span><span>繁體中文公開摘要</span></div><p class="g-small">適合已使用程式設計代理、開始同時管理多項工程任務，想把催進度、驗收與知識交接變成可重用流程的工程師與技術主管。</p></div></div><nav class="toc" aria-label="本場內容導覽"><a href="#takeaways">重點</a><a href="#chapters">章節</a><a href="#concepts">實作與概念</a><a href="#workflow">操作流程</a><a href="#limits">限制</a><a href="#transcript">原始來源</a></nav></header><p class="g-small"><strong>用語先說清楚：</strong>本頁的「代理」是能代人使用工具、執行工作的 AI；「上下文」是它判斷事情時能讀到的背景資料。其他專門用語在下方詞彙區有白話解釋。</p><details class="g-note reveal"><summary>先看本場專門用語的白話解釋</summary><dl><dt><strong>Cursor Cloud agents</strong></dt><dd>在雲端環境執行工程工作的代理。本場由 Grok Bot 啟動、讀取進度與追加提示，讓人不必逐一管理執行細節。</dd><dt><strong>first party integration</strong></dt><dd>產品提供的直接整合。本場指可用工具呼叫管理雲端代理，而不必操作使用者介面來啟動或閱讀紀錄。</dd><dt><strong>MCP</strong></dt><dd>本場用於連接外部工具的整合介面，例如 Vercel 與 Slack；沒有這類入口的網站工作，則示範改用電腦操作。</dd><dt><strong>routine</strong></dt><dd>讓 Bot 依時間或訊號執行的固定工作。本場包括夜間稽核，以及 P0 任務每五分鐘查看雲端代理進度。</dd><dt><strong>playbook</strong></dt><dd>團隊共用的操作手冊。示範存於 Notion，由 Jenny 負責更新與公告，記錄 P0 和交付證據等工程規範。</dd><dt><strong>P0 escalation</strong></dt><dd>這裡的 P0 代表最高優先處理的急件，escalation 是升級處理。本場設定定期檢視，辨識偏離或浪費並介入；這是講者的具體設定，不是普遍標準。</dd><dt><strong>context limit</strong></dt><dd>Bot 當下能處理的上下文有上限。本場以角色分工與 Notion 任務狀態表，減少同時管理多項工作的資訊負擔。</dd><dt><strong>feedback loop</strong></dt><dd>以可觀察結果判斷成功或失敗，再決定繼續修正或交付的閉環。本場例子包含網站操作、UI 截圖與效能指標。</dd><dt><strong>PR / CI</strong></dt><dd>PR 是交給他人檢查與合併的程式碼變更提案；CI 是程式變更後自動執行的檢查。本場要求提案附上真正操作產品的證據，不能只看自動檢查是否通過。</dd></dl></details><div class="g-note g-boundary"><p><strong>怎麼對照影片：</strong>本頁時間戳全部是「完整回放檔案」的播放位置，不是台灣時鐘。整理範圍約 03:54:07–04:39:25。本講從完整回放 03:54:07 的舞台問候開始，至 04:39:25 明確交回 Matt、Lauren、Roshan，約 45 分 18 秒。前後的餐廳計畫與建站實作屬主持群另段內容，不納入 Lingxi Li 的工作坊。本講沒有獨立觀眾 Q&amp;A，文中保留講者自問自答及示範中的決策問題。</p><p>講者姓名依整理時參考的議程；現場可能多人發言，本頁不把所有發言都歸給同一人。整理時參考本機語音辨識，專名仍可能有誤。公開版僅提供中文摘要與整理者圖解，不重製完整逐字稿或原始講座截圖。</p></div><div class="g-toolbar"><button class="g-button primary" id="preview-notes">預覽／複製本頁重點</button><a class="g-button" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer">開啟 X 完整回放</a></div><section id="takeaways"><div class="sec-head"><span class="idx">01</span><h2>先掌握這場的核心</h2></div><p class="sec-intro">先看重點，再依時間到原始回放核對。不是產品功能清單，而是這場實際展示的用法。</p><div class="g-grid"><article class="card"><h3>把「管理程式設計代理」也交出去</h3><p>講者曾同時管理十五個雲端代理，負擔在切換任務、寫後續提示與判斷是否完成。Grok Bot 的角色是透過第一方工具讀取進度、啟動工作與追補證據；工程師不必逐個盯住對話，但必須先給它可以判斷完成與否的準則。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 03:58:25" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">03:58:25 ↗ 回放</a></article><article class="card"><h3>緊急，不等於省略驗證</h3><p>現場先讓 Bot 檢查使用者不能查看已訂航班的回報，取得 /trips 尚是空殼的診斷，再定義 P0。具體要求是每五分鐘檢查雲端代理，必要時打斷無謂等待或偏題；重點是消除浪費，而不是讓「急件」成為猜答案、跳步驟的理由。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:23:24" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:23:24 ↗ 回放</a></article><article class="card"><h3>規則只說一次，但要有負責傳播的人</h3><p>講者新增營運角色 Jenny，指定它擁有 Notion 操作手冊，避免其他工程 Bot 任意修改。Craig 把 P0 規則交給 Jenny，再由 Jenny 更新並通知其他 Bot。這是現場實際操作的知識交接，不是把同一段提示複製貼給每個工程角色。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:30:53" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:30:53 ↗ 回放</a></article><article class="card"><h3>PR 要帶成果證據，任務狀態要放在外部</h3><p>本場要求 UI 修改附截圖、效能改善附指標，缺少證據就讓 Bot 追問雲端代理。另一個重點是以 Notion 資料庫保存每項任務與所在階段，避免一個 Bot 管理二十個代理時，把所有細節都塞進有限的對話上下文。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:33:44" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:33:44 ↗ 回放</a></article><article class="card"><h3>自動化的邊界仍由人設定</h3><p>講者保留產品方向、設計細節、困難效能問題與架構選擇，也強調要教 Bot 如何說不。夜間清理與 CI 自修復都須有預先設定的合併條件；登入、人類驗證或超過處理門檻的問題仍需人介入，不能把自主執行理解成無條件放權。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:09:58" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:09:58 ↗ 回放</a></article></div></section><section id="chapters"><div class="sec-head"><span class="idx">02</span><h2>沿著現場的順序看</h2></div><p class="sec-intro">點選章節可開啟 X 原始回放，請手動跳至標示時間；章節是依內容整理的閱讀段落，不是主辦方公布的精確分段。</p><div class="g-grid"><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>03:54:07 — 03:59:16</small><h3>從補全程式碼，走到有人替你管理代理</h3><p>講者以自己的產品開發經驗開場，回顧補全、問答編輯、代理式程式設計與事件觸發自動化。雲端代理能平行執行，卻仍需要人切換上下文、寫提示和催進度；Grok Bot 因此被定位成能追蹤、打斷與安排後續工作的協作層。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>03:59:16 — 04:06:18</small><h3>工具整合、記憶與人類接管的入口</h3><p>第一方整合讓 Bot 用工具呼叫啟動雲端代理、讀取逐字紀錄與追補截圖或效能比較；Vercel MCP 則用於部署訊號與排程。講者也介紹分開保存的 Bot 記憶，以及從手機或桌面接管遠端電腦，處理登入、人類驗證等阻塞。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:06:18 — 04:11:28</small><h3>離線時的審查，以及人仍要負責的決策</h3><p>以人在飛機上仍需審 PR 的情境，說明 Slack 監看、審查條件、程式碼掃描和回覆通知。問題回報應先確認能否在 main 重現，才修復並送 PR。接著回答人類的位置：產品方向、架構、難題與拒絕不合適需求，都不能只靠 Bot 自行猜測。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:11:28 — 04:16:15</small><h3>三種日常用途：夜間稽核、內部工具與 CI 自修復</h3><p>夜間掃描多專案共用程式碼庫找模組化、冗長註解與安全問題，早上收 PR；較低風險清理也要符合端到端證據與合併條件。內部測試邀請可改為 Slack 標註 Bot 加 email，省去另造後台；CI 或部署告警則先交 Bot 調查，未解決才升級給值班人員。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:16:15 — 04:18:11</small><h3>為什麼同一模型還要拆成不同工程角色</h3><p>團隊配置包含幕僚長、UI、開發體驗與基礎設施角色。拆分不是因為同一模型不會做別的任務，而是各角色有不同流程、長期記憶與有限上下文；幕僚長掌握誰在做什麼並分派工作，不必記住所有工程執行細節。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:18:11 — 04:21:37</small><h3>現場加入 Steve，讓既有 Bot 帶新人</h3><p>既有工程 Bot 已知道程式碼庫並連接 Notion。講者從模板市集加入夜間稽核工程師，要求改名 Steve，由 Craig 傳達看板要求、清理定義與流程階段。雙方用文字確認交接後，現場提前啟動夜間稽核，讓它在背景研究並安排雲端工作。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:21:37 — 04:26:46</small><h3>先驗證航班網站故障，再建立共用手冊負責人</h3><p>講者請 Craig 查證使用者不能查看既有訂位的問題，並觀察 Bot 在遠端電腦瀏覽網站。等待期間新增 Jenny 管理 Notion 操作手冊，避免反覆交代急件規則；Craig 隨後回報導覽仍指向 /trips，但該頁是空殼，確認回報有實際依據。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:26:46 — 04:30:53</small><h3>把 P0 寫成五分鐘一次的督導流程</h3><p>講者示範定義 P0：每五分鐘檢查雲端代理的進度與工具操作，遇到偏離目標或不必要長時間等待就介入。例子是測試只跑一分鐘，代理卻 sleep 300。接著引用故障回覆要求以 P0 修復；此處展示的是規則建立與派工，而非修復已驗收。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:30:53 — 04:36:58</small><h3>傳播規則、查看 PR，並把任務狀態移出上下文</h3><p>Craig 把 P0 交給 Jenny，Jenny 更新手冊並通知其他工程 Bot；接著追加每個 PR 都要附對應證據。Steve 已回報清理 PR，另有任務仍進行。講者展示 Notion 任務階段、安全／缺陷檢查，並查看一個上台前已啟動任務所產生的截圖。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>04:36:58 — 04:39:25</small><h3>收束：像帶新人一樣溝通，但一定要有回饋閉環</h3><p>收尾提出三件事：把 Bot 當成有能力、但尚不懂組織脈絡的實習生；把反覆提示抽成手冊或由其他 Bot 督導；為每種工程任務設置成功與失敗訊號。網站實際操作是例子，硬體也需要自己的回饋。隨後明確結束工作坊並交回主持群。</p></a></div></section><section id="concepts"><div class="sec-head"><span class="idx">03</span><h2>把概念接回真實示範</h2></div><p class="sec-intro">每個整理點都附原始回放的參考時間；示範結果不等於對所有情境的保證。</p><div class="g-grid"><article class="card g-concept"><h3>01 / 第一方整合：管理進度，不只是代寫程式</h3><p>Grok Bot 在這套配置中負責協調，雲端程式設計代理負責執行工程工作。前者能透過工具讀取執行紀錄、啟動任務與追加回覆，不必靠點選介面才知道進度。講者把「是否真的完成」也交給這一層判斷，但判斷基準來自人事先要求的證據，並不是代理回報完成就直接接受。</p><div class="g-example"><strong>現場例子</strong><p>講者描述：一輪雲端工作結束後，Bot 檢查是否附上截圖或改善前後的效能比較。如果缺少，就直接回覆雲端代理，列出還要補的內容，讓工作在人離開電腦後繼續。這是工作流說明，非當場展示所有缺件追補步驟。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:00:33" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:00:33 ↗ 回放</a></article><article class="card g-concept"><h3>02 / 夜間稽核：先研究，再產出有條件可合併的 PR</h3><p>講者把夜間清理用於較低風險的程式碼品質問題，例如收斂模組、縮減冗長註解；夜間較少人提交，也較不容易衝突。研究代理先掃描整個多專案共用程式碼庫，範圍亦包括安全稽核，再安排改善工作。自動合併不是預設無限制放行，而是要符合事先定義的端到端證據與其他條件。</p><div class="g-example"><strong>現場例子</strong><p>現場安裝夜間稽核工程師後，講者不等夜間排程，直接請 Steve 開始稽核。稍後查看時，Steve 已啟動多個雲端代理並整理成果；再往後已有清理 PR 可供審查，也明說另一項工作仍在跑，沒有把全部任務都描述成完成。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:12:17" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:12:17 ↗ 回放</a></article><article class="card g-concept"><h3>03 / Slack 訊息也能是內部工具的介面</h3><p>對單一步驟的內部操作，不一定要先建資料庫、驗證機制與獨立後台。講者用加入測試邀請名單為例：同事在 Slack 標註 Bot 並提供 email，由例行任務或 webhook 訊號觸發既定操作。省下的是額外介面與部署，不是省略授權；Bot 仍必須用安全方式取得目標服務的存取權。</p><div class="g-example"><strong>現場例子</strong><p>本場口述原本可用一兩小時做出內部儀表板，改用 Bot 後只需描述任務，讓員工在 Slack 送出 email 即可啟動邀請流程。原稿把目標服務辨識為「test fly」，此處不假裝已看到完整服務設定或實際邀請寄出的畫面。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:14:13" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:14:13 ↗ 回放</a></article><article class="card g-concept"><h3>04 / 分角色的理由是上下文，不是不同模型能力</h3><p>講者自問：既然工程 Bot 都用同一模型，為什麼還要三個？答案是各類任務有不同工作流程、長期規則和上下文上限。依 UI、開發體驗與基礎設施分工，能讓角色沿用自己的記憶。幕僚長只掌握分工與路由，避免總管也背負每個專業流程的全部細節。</p><div class="g-example"><strong>現場例子</strong><p>講者說，即使把 UI 工作交給基礎設施 Bot，它仍可能做得出來；拆分是為了下一個基礎設施任務來時，不必重新拉回那一類指示。平常主要找幕僚長分派，只有必要時才直接與各工程 Bot 對話。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:16:58" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:16:58 ↗ 回放</a></article><article class="card g-concept"><h3>05 / Bot 帶 Bot 入職：交接要有內容與確認</h3><p>從模板市集裝入的 Bot 並不知道你的組織工作方式。現場不是由人重新講一遍，而是命令已熟悉流程的 Craig 帶新成員入職。交接資訊包括 Notion 看板要求、什麼叫完成清理，以及工作如何推進各階段；新 Bot 再確認並吸收到記憶。可重用的關鍵是知識傳遞，而不只是增加一個名字。</p><div class="g-example"><strong>現場例子</strong><p>講者新增夜間稽核工程師，要求將它改名 Steve，並請既有工程 Bot 告訴它如何遵守工程流程。稍後讀到 Craig 已傳訊、雙方已互相確認，再請 Craig 通知 Steve 立刻開跑夜間稽核，不需要人逐項複製所有設定。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:20:00" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:20:00 ↗ 回放</a></article><article class="card g-concept"><h3>06 / 先查回報是真是假：computer use 提供實際症狀</h3><p>現場收到「無法查看以前訂好的航班」這個需求時，第一個指令是確認它是否屬實，而不是立即生成修補程式。Bot 在自己的電腦中瀏覽網站，講者可以監看。這種操作也涵蓋沒有 MCP 可呼叫的網站流程；成功訊號必須來自實際頁面與功能，而非只靠文字猜測故障。</p><div class="g-example"><strong>現場例子</strong><p>講者詢問 flylowair.com 是否真的無法查詢既有航班。稍後 Craig 回報 /trips 是 stub，導覽卻仍連到那裡，因此沒有查看先前訂位的功能。原稿展示查證結果與後續派工，但沒有展示這個故障修復後的完整驗收。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:26:17" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:26:17 ↗ 回放</a></article><article class="card g-concept"><h3>07 / P0 是具體監督頻率，不是反覆說「急」</h3><p>講者先警告，單說緊急可能讓代理跳過步驟或猜測答案，因此把 P0 定義成可執行的督導規則：Grok Bot 每五分鐘檢視雲端代理進度，遇到偏離目標、無謂等待等情況再打斷並給後續提示。這是他的示範工作流，不是所有團隊或所有產品通用的 P0 標準。</p><div class="g-example"><strong>現場例子</strong><p>具體例子是代理在另一個 shell 等非同步測試，用了 sleep 300；如果測試一分鐘就完成，其餘四分鐘就是浪費。講者把這種情況寫進監看要求，接著用 Reply 引用故障診斷，要求「Fix this issue urgently」並指定按 P0 處理。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:27:43" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:27:43 ↗ 回放</a></article><article class="card g-concept"><h3>08 / Playbook 有單一負責人，更新後還要通知</h3><p>只讓 Craig 知道 P0，不代表其他工程 Bot 也已知道。講者另建立 Jenny 作為營運負責角色，要求它擁有 Notion 操作手冊並避免其他工程角色修改。Craig 提交新規則，Jenny 負責更新與公告。這使一項口頭決定轉成團隊共享的日常操作，而非散落在各自聊天紀錄裡。</p><div class="g-example"><strong>現場例子</strong><p>現場先由幕僚長新增並交接 Jenny，再請 Craig 把 P0 工作流寫進手冊，讓 Jenny 通知所有工程 Bot。之後講者查看訊息，確認 Jenny 已與其他 Bot 溝通，也通知 Craig 手冊更新；需要人決策時，Jenny 仍會詢問。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:30:53" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:30:53 ↗ 回放</a></article><article class="card g-concept"><h3>09 / Notion 任務表：讓二十個代理的進度可查</h3><p>Bot 能一面聊天一面工作，不代表它能無限承載新任務。講者承認催促與同時工作過多會讓上下文流失，因此使用 Notion 任務資料庫，記錄每項任務和所在階段。Bot 接續下一件事前可回查狀態，而非在對話中持續保留所有雲端代理的細節；分角色與外部狀態表是互補做法。</p><div class="g-example"><strong>現場例子</strong><p>示範中 Steve 已有一個清理 PR，另一項工作仍在進行。講者接著指出任務表記錄工作階段，並談到缺陷與安全檢查可找出代理引入的問題，例如資料外洩或 session 管理。原稿中部分欄位名稱辨識不清，故不杜撰完整狀態機。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:34:48" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:34:48 ↗ 回放</a></article><article class="card g-concept"><h3>10 / 回饋閉環：完成的依據必須可觀察</h3><p>本場最終把工程委派收束到成功與失敗訊號：Bot 必須能判斷應該繼續催促，還是停止並交付合併。UI 改動看截圖，效能改善看指標，網站功能則可用實際操作形成回饋。講者強調連硬體工程也需要自己的可觀察訊號，但沒有在這場展示硬體測試流程。</p><div class="g-example"><strong>現場例子</strong><p>講者追加操作手冊規則：每個 PR 都附證據，UI 附截圖、效能工作附 metrics。後面實際查看一個上台前已啟動的任務，指出其中有成果截圖及 Bot 撰寫的雲端提示；那不是剛剛 /trips 急件已修好的證明，兩者不能混寫。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:33:20" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:33:20 ↗ 回放</a></article></div></section><section id="workflow"><div class="sec-head"><span class="idx">04</span><h2>從工程 Bot 入職到以證據驗收：依現場操作整理的六步流程</h2></div><p class="sec-intro">以 15491–16618 秒現場示範為主，串接講者說明的驗收原則。這是整理者歸納的操作順序；示範並未展示航班故障修復後的完整端到端結果，也未證明所有 PR 已合併。</p><ol class="g-flow"><li class="card"><h3>準備熟悉專案的工程 Bot</h3><p>先有一個已知道程式碼庫、連好 Notion 的工程 Bot，再從模板市集加入夜間稽核工程師。現場把前者稱作 Craig、新成員改名 Steve；新增模板本身不會自動帶入組織流程。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:18:23" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:18:23 ↗ 回放</a></li><li class="card"><h3>由既有 Bot 交接規範，啟動背景稽核</h3><p>請 Craig 告訴 Steve 看板規格、清理完成定義和工作階段，等待雙方文字確認。接著請它立刻開始夜間稽核，讓研究與雲端工程任務在背景進行；不必把每條指示重新貼給新 Bot。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:19:21" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:19:21 ↗ 回放</a></li><li class="card"><h3>提供具體故障，先要求查證</h3><p>把使用者不能查既有航班的回報交給 Craig，要求檢查是否屬實。觀察遠端電腦上的網站操作，再讀取診斷：/trips 是空殼但導覽仍指向它。這一步的產物是可定位的問題，不是已完成修復。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:21:47" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:21:47 ↗ 回放</a></li><li class="card"><h3>定義 P0，再引用原問題派工</h3><p>把急件轉成每五分鐘檢查進度的例行任務，列明偏題或不必要長等待時應介入；不要以跳步驟換速度。定義後，使用 Reply 引用故障回報，要求依 P0 修復，保留派工與原症狀的關聯。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:28:41" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:28:41 ↗ 回放</a></li><li class="card"><h3>將規則交給手冊負責人並公告</h3><p>請幕僚長建立 Jenny 管理 Notion 操作手冊，限定更新責任。由 Craig 交接 P0，再請 Jenny 通知所有工程 Bot；同樣把 UI 截圖、效能指標等交付要求納入，避免規則只存在一個聊天裡。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:30:53" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:30:53 ↗ 回放</a></li><li class="card"><h3>查看任務狀態與證據，而非只看完成宣告</h3><p>以 Notion 任務表確認工作在哪個階段，再進 PR 檢查相應成果與安全／缺陷檢查。現場可見清理 PR 以及另一個既有任務的截圖；是否合併仍取決於既定條件，不能拿別項成果替急件驗收。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:34:14" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:34:14 ↗ 回放</a></li></ol></section><section id="limits"><div class="sec-head"><span class="idx">05</span><h2>哪些地方不能直接照單全收</h2></div><p class="sec-intro">分清楚現場示範、講者判斷與整理者提醒。</p><div class="g-grid"><article class="card"><h3>不要把急件變成猜測或省略步驟</h3><p>講者明確提醒，「urgent」可能誘使代理為了快而跳過步驟。本場的修正是定義督導頻率、可打斷情境與後續提示，而非允許降低驗收標準。sleep 300 是說明等待浪費的例子，並未展示現場真的打斷了該命令。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:23:24" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:23:24 ↗ 回放</a></article><article class="card"><h3>自主不等於不用人做決策或授權</h3><p>講者仍處理產品方向、架構、困難效能問題，並教 Bot 拒絕不適合的需求。登入、人類驗證與不願交出密碼的情況，可由人接管遠端電腦完成；提到可接管並不代表已替所有服務建立安全授權。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:09:58" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:09:58 ↗ 回放</a></article><article class="card"><h3>排程、合併與值班門檻都是個人設定</h3><p>講者描述自己的夜間研究設定為凌晨三點，現場安裝的稽核 Bot 又說通常凌晨四點執行，不能合成一個產品預設。CI 約十分鐘未解決才通知值班者也是其工作流範例；自動合併的前提仍是預先設定的條件與證據。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:12:34" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:12:34 ↗ 回放</a></article><article class="card"><h3>多人工作仍會碰到上下文上限</h3><p>講者承認，在 Bot 執行工作時頻繁催促或塞太多任務，可能讓它失去上下文。因此才用分角色記憶與外部 Notion 狀態表。這些安排是降低管理負擔的方法，不能解讀成任意數量的並行任務都能穩定完成。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:34:38" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:34:38 ↗ 回放</a></article><article class="card"><h3>區分已展示、口述情境與未展示的成果</h3><p>整理者提醒：本場展示了入職交接、查證 /trips 問題、建立 P0、公告手冊與查看 PR 證據；沒有展示該航班故障的最終驗收。結尾查看的截圖屬上台前已啟動的另一項任務。沒有獨立觀眾 Q&amp;A；後續主持人的餐廳建站也不是本講延伸。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 04:36:19" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:36:19 ↗ 回放</a></article></div><div class="g-note"><strong>辨識與來源限制：</strong>英文原稿是自動辨識，專名與少數語句仍需對照影音；直播原有的休息與中斷沒有補造內容。這是中文重點整理，不是逐句中文翻譯。<details class="reveal"><summary>查看專名疑點與整理核對紀錄</summary><ul><li>整理時參考的本機轉錄包含講座前後緩衝，最後一句到約 04:45:40；本頁摘要只涵蓋講座範圍，講者交還主持人後的聊天不納入，亦不公開本機轉錄。</li><li>未見長段內容循環或足以破壞本講理解的重複幻覺。14471–14486、15356–15371、16241–16256 秒附近有 chunk 重疊造成的近似重複／時間回跳；中文整理未重複計入；本機轉錄不公開。</li><li>Grok Bot 在 ASR 中有 RockBot、Grogbot、ScropBot、GraphBot 等變體；中文統一用 Grok Bot，原話請以原始回放核對。姓名 Ling Shi 與議程 Lingxi Li 不一致，採議程署名，不根據 ASR 另造人名。</li><li>Chief of staff 名稱辨識為 Ling Xishi、工程模板辨識為 Linksheets engineer bot、基礎設施 Bot 名稱出現 Hogan 1QR；正文只使用可理解角色，未替不確定專名補寫正式拼法。</li><li>test fly 很可能為測試邀請服務名稱的誤辨；未外部查證，正文保留為測試邀請案例並註明辨識內容。flylowair.com、SlashTrips／/trips 依本場語境轉述，網址拼法未另核對。</li><li>15674.532 秒的『I just let him stop right now』與前後 start nightly audit 語境不合，未當作實際停止動作。16189 秒附近『and not interrupt』、16449 秒『should not understand』也疑似辨識錯誤；不採作操作規則引文。</li><li>16532–16542 秒的 trust polish、watching 3.3 等任務或狀態名稱不清，僅整理其可確定的任務階段、安全檢查與 bug bots 話題。</li><li>凌晨三點與四點分別出現在個人 nightly setup 說明和現場模板啟動語境，保留差異，不擅自視為同一排程。</li></ul></details><p class="g-small">頁面樣式已內嵌，範本的 Tailwind CDN 與 X 回放連結需要網路。</p></div></section><section id="transcript"><div class="sec-head"><span class="sec-num">06</span><h2>原始來源與公開範圍</h2></div><div class="g-note"><p>本頁僅公開中文編輯摘要與整理者自製圖解，不再散布完整逐字稿或原始講座截圖。講者原話與示範畫面請至原發布者的 X 回放觀看。</p><p>各章節與重點保留參考時間；連結會開啟完整回放，請手動跳至所示位置，並以原始影音為準。</p><a class="g-button" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer">觀看 X 原始回放</a></div></section><div class="g-topnav"><a href="grok-bot-101.html">Grok Bot 101</a><a href="grok-bot-product-managers.html">Grok Bot for Product Managers</a><a href="grok-bot-founders.html">Grok Bot for Founders</a></div><footer class="foot"><div>來源：Grok Bot Galaxy Day 1 原始回放 · 2026/09/15–16<br>中文編輯摘要與自製圖解；不重製完整逐字稿及原始講座截圖。</div><a href="../../index.html#collection">回到知識書庫</a><a href="../index.html">Grok Galaxy 活動總覽</a><div>視覺化工具：<a href="https://github.com/chenjackle45/html-visualizer" target="_blank" rel="noopener noreferrer">html-visualizer</a><br>錄影排程工作流程參考：<a href="https://github.com/shuotao/au2026" target="_blank" rel="noopener noreferrer">au2026</a>（工具署名不代表原始內容的再散布授權）。</div></footer></main><dialog id="export-dialog" class="g-dialog"><h2>本頁重點與評論</h2><textarea id="export-text" aria-label="待複製的本頁重點"></textarea><p id="export-status" aria-live="polite"></p><div class="g-toolbar"><button id="copy-export" class="g-button primary">確認複製</button><button id="close-export" class="g-button">關閉</button></div></dialog><script id="summary-data" type="application/json">"Grok Bot for Engineering｜讓工程代理帶隊：從重現故障、追蹤急件，到附上修復證據\n\n本場把 Grok Bot 放在工程協作的管理層：由它啟動與督導雲端程式設計代理，讓各 Bot 交接知識、共用作業手冊，並以截圖、效能數據與實際操作判斷成果。人仍須定義產品方向、拒絕不合適需求、處理授權；真正可委派的不是一句「趕快修好」，而是有明確邊界與成功訊號的工作流程。\n\n把「管理程式設計代理」也交出去\n講者曾同時管理十五個雲端代理，負擔在切換任務、寫後續提示與判斷是否完成。Grok Bot 的角色是透過第一方工具讀取進度、啟動工作與追補證據；工程師不必逐個盯住對話，但必須先給它可以判斷完成與否的準則。 [03:58:25]\n\n緊急，不等於省略驗證\n現場先讓 Bot 檢查使用者不能查看已訂航班的回報，取得 /trips 尚是空殼的診斷，再定義 P0。具體要求是每五分鐘檢查雲端代理，必要時打斷無謂等待或偏題；重點是消除浪費，而不是讓「急件」成為猜答案、跳步驟的理由。 [04:23:24]\n\n規則只說一次，但要有負責傳播的人\n講者新增營運角色 Jenny，指定它擁有 Notion 操作手冊，避免其他工程 Bot 任意修改。Craig 把 P0 規則交給 Jenny，再由 Jenny 更新並通知其他 Bot。這是現場實際操作的知識交接，不是把同一段提示複製貼給每個工程角色。 [04:30:53]\n\nPR 要帶成果證據，任務狀態要放在外部\n本場要求 UI 修改附截圖、效能改善附指標，缺少證據就讓 Bot 追問雲端代理。另一個重點是以 Notion 資料庫保存每項任務與所在階段，避免一個 Bot 管理二十個代理時，把所有細節都塞進有限的對話上下文。 [04:33:44]\n\n自動化的邊界仍由人設定\n講者保留產品方向、設計細節、困難效能問題與架構選擇，也強調要教 Bot 如何說不。夜間清理與 CI 自修復都須有預先設定的合併條件；登入、人類驗證或超過處理門檻的問題仍需人介入，不能把自主執行理解成無條件放權。 [04:09:58]\n\n來源：https://x.com/i/broadcasts/1AxRnZbVpjaxl\n時間戳為完整回放播放位置。"</script><style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea id="vt-popup-textarea" placeholder="對這段文字的評論 / 疑問 / 補充..."></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Grok Galaxy", id: "local", project: "grok-galaxy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script></body>
+</html>

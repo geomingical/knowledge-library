@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grok Bot 101｜第一天學習筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script><style>
+html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-underline-offset:4px}button,input{font:inherit}button,a,summary{touch-action:manipulation}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}button{cursor:pointer}h1{max-width:23ch;overflow-wrap:anywhere}h2,h3{overflow-wrap:anywhere}h3{font-size:21px;font-weight:650;margin:0 0 12px}p{margin:0 0 14px;max-width:72ch}.wrap{padding:0 24px 70px}header.masthead{padding:28px 0 40px}.g-back{display:inline-block;margin:20px 0}.g-hero{display:block}.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.g-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.g-grid>*,.g-hero>*,.g-three>*{min-width:0}.g-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.g-meta span{background:var(--g100);padding:5px 12px;border-radius:6px;font-size:13px;color:var(--g700)}.g-lead{font-size:20px;color:var(--g700);max-width:60ch}.g-note{background:var(--g100);border-left:3px solid var(--clay);padding:18px 22px;border-radius:0 8px 8px 0;margin-top:22px;font-size:14px;color:var(--g700)}.g-time{font:13px var(--mono);white-space:nowrap;display:inline-block;border-bottom:1px solid var(--oat);text-decoration:none;margin:6px 0}.g-cite{margin-top:16px}.g-chapter{display:block;text-decoration:none;color:inherit;transition:border-color .15s}.g-chapter:hover{border-color:var(--clay)}.g-chapter small{font:12px var(--mono);color:var(--clay-d)}.g-chapter h3{margin:10px 0}.g-concept{margin-top:22px}.g-concept .g-example{background:var(--g100);padding:18px;border-radius:8px;margin-top:16px}.g-concept blockquote{border-left:3px solid var(--oat);margin:16px 0 0;padding:10px 16px;color:var(--g700);font-size:15px;overflow-wrap:anywhere}.g-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:step}.g-flow li{counter-increment:step;position:relative;padding:24px 24px 24px 65px;background:var(--paper);border:1.5px solid var(--g300);border-radius:12px;min-width:0}.g-flow li:before{content:counter(step,decimal-leading-zero);position:absolute;left:20px;top:24px;font:18px var(--mono);color:var(--clay-d)}.g-term dt{font-weight:700;margin-bottom:8px}.g-term dd{margin:0;color:var(--g700)}.g-term{margin:0}.g-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.g-button{border:1px solid var(--g300);border-radius:8px;padding:10px 16px;background:var(--paper);color:var(--slate);text-decoration:none;font-size:14px;display:inline-block}.g-button.primary{background:var(--slate);color:var(--ivory);border-color:var(--slate)}.g-small{font-size:13px;color:var(--g700)}.g-status{min-height:26px;margin:10px 0;color:var(--g700);font-size:14px}.g-dialog{max-width:750px;width:92vw;border:1px solid var(--g300);border-radius:14px;padding:26px;background:var(--ivory);color:var(--slate)}.g-dialog::backdrop{background:rgba(20,20,19,.6)}.g-dialog textarea{width:100%;height:45vh;resize:vertical;padding:15px;border:1px solid var(--g300);border-radius:8px;font:14px/1.7 var(--sans);color:var(--slate);background:var(--paper)}.g-topnav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px}.g-topnav a{font-size:14px}.vt-comment-list{max-width:calc(100vw - 32px)}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-session-badge{border-radius:6px;letter-spacing:0}.sec-head{align-items:flex-start}.sec-head h2{line-height:1.35}.g-boundary p:last-child{margin-bottom:0}
+.g-hero h2{font-size:23px;font-weight:650;line-height:1.45;margin:18px 0}.g-note details{margin-top:12px}.g-note summary{cursor:pointer;font-weight:650}.g-note li{max-width:72ch;margin:10px 0}.g-note ul{padding-left:24px}
+
+@media(max-width:800px){.g-hero,.g-three{grid-template-columns:1fr}.g-grid,.g-flow{grid-template-columns:1fr}.g-hero{gap:22px}.wrap{padding:0 10px 70px}header.masthead{padding-top:16px}h1{font-size:38px;line-height:1.15}.g-lead{font-size:18px}section{margin-top:48px}.card{padding:20px}.g-flow li{padding-right:18px}.sec-head{gap:10px}.sec-head h2{font-size:25px}.g-meta span{font-size:12px}.g-toolbar>*{max-width:100%}}
+@media print{.g-toolbar,.g-topnav,.vt-comment-trigger,.vt-comment-pill,.g-dialog{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}h1{font-size:36px}}
+</style></head><body><main class="wrap"><nav aria-label="書庫與活動導覽"><a class="g-back" href="../../index.html#collection">← 回到知識庫</a> · <a href="../index.html">Grok Galaxy 活動總覽</a></nav><header class="masthead"><div class="eyebrow">DAY 1 / 2026.09.16 / 講題學習筆記</div><div class="g-hero"><div><h1>Grok Bot 101</h1><h2>從咖啡問卷到簡報與郵件：建立會記憶、協作與請示的 AI 同事</h2><p class="g-lead">本場用咖啡問卷串起資料、簡報與郵件三個代理，說明 Grok Bot 的單位不是一次性對話，而是有職責、記憶與雲端電腦的長期同事。人要定義成果、教會操作、設定批准邊界並處理阻礙；現場的反覆請示與表單權限失敗，也讓這套協作方式的限制具體可見。</p><div class="g-meta"><span>議程講者：Roman Ugarte</span><span>表定台灣時間 00:00–01:00</span><span>繁體中文公開摘要</span></div><p class="g-small">適合第一次使用 Grok Bot，或想把問卷、簡報、郵件等重複工作交給多個代理協作的知識工作者與團隊管理者。</p></div></div><nav class="toc" aria-label="本場內容導覽"><a href="#takeaways">重點</a><a href="#chapters">章節</a><a href="#concepts">實作與概念</a><a href="#workflow">操作流程</a><a href="#limits">限制</a><a href="#transcript">原始來源</a></nav></header><p class="g-small"><strong>用語先說清楚：</strong>本頁的「代理」是能代人使用工具、執行工作的 AI；「上下文」是它判斷事情時能讀到的背景資料。其他專門用語在下方詞彙區有白話解釋。</p><details class="g-note reveal"><summary>先看本場專門用語的白話解釋</summary><dl><dt><strong>Computer use / Linux VM</strong></dt><dd>Computer use 是讓 AI 直接操作電腦畫面。VM 可想成雲端提供的一台獨立電腦，Linux 是它的作業系統；本場用它建立表單與編輯簡報，不只呼叫現成整合。</dd><dt><strong>MCP / API</strong></dt><dd>MCP 是讓 AI 接上外部工具的連接方式；API 是軟體彼此溝通的介面。缺少這類連接時，本場改由代理直接操作瀏覽器與應用程式。</dd><dt><strong>Teach a task / skill</strong></dt><dd>先錄製人類在代理電腦上的示範，再整理為可重用技能；本場示範把簡報飛入動畫的操作保存下來。</dd><dt><strong>Routine</strong></dt><dd>按指定時間重複執行的工作安排；例子包括每天九點摘要簡報變更，以及多個代理每週合作寄出更新。</dd><dt><strong>Auto review</strong></dt><dd>判斷動作風險並決定是否請求批准的機制；本場另加個人規則，實際攔下需先詢問的郵件回覆。</dd><dt><strong>Agent to agent communication</strong></dt><dd>代理彼此交換背景與工作結果的協作方式；可在一對一訊息或群組中觀察，並據此等待前置產物完成。</dd><dt><strong>Share as template / Marketplace</strong></dt><dd>將角色設定作為模板分享，以及尋找公開或團隊模板的入口；適合重用工作規格，但不等於複製全部歷史記憶。</dd><dt><strong>Memory / S3 buckets</strong></dt><dd>本場以 S3 儲存說明長期記憶；可透過指示修正。角色被複製時從新記憶開始，過期委派關係也需更新。</dd></dl></details><div class="g-note g-boundary"><p><strong>怎麼對照影片：</strong>本頁時間戳全部是「完整回放檔案」的播放位置，不是台灣時鐘。整理範圍約 00:30:25–01:29:43。約 00:30:25 開始產品起源介紹，00:38:13 交接實作；保留後段現場問答，至約 01:29:44 收尾。01:31:05 主持人回場後的創業實作不屬於本講。</p><p>講者姓名依整理時參考的議程；現場可能多人發言，本頁不把所有發言都歸給同一人。整理時參考本機語音辨識，專名仍可能有誤。公開版僅提供中文摘要與整理者圖解，不重製完整逐字稿或原始講座截圖。</p></div><div class="g-toolbar"><button class="g-button primary" id="preview-notes">預覽／複製本頁重點</button><a class="g-button" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer">開啟 X 完整回放</a></div><section id="takeaways"><div class="sec-head"><span class="idx">01</span><h2>先掌握這場的核心</h2></div><p class="sec-intro">先看重點，再依時間到原始回放核對。不是產品功能清單，而是這場實際展示的用法。</p><div class="g-grid"><article class="card"><h3>用職責建立代理，而不是每個任務重開對話</h3><p>開場把 AI 從聊天、協作助手推向長期同事：代理負責一類工作，累積偏好與背景，再跨專案反覆使用。示範讓 Data Dan 管資料、Slide Sonya 管簡報、Email Ethan 管郵件；分工可以依專長或專案安排，不必每次從零重新解釋。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:32:52" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:32:52 ↗ 回放</a></article><article class="card"><h3>雲端電腦補上直接整合做不到的操作</h3><p>每個代理有自己的 Linux 虛擬機，可以在網頁介面操作表單與簡報，也能搭配既有 MCP 或 API。使用者可查看、接管或錄製教學；任務不綁在個人筆電是否開著，但仍需要登入權限，也會受模型操作速度及批准等待影響。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:42:26" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:42:26 ↗ 回放</a></article><article class="card"><h3>把示範、明確規則與回饋變成可重用能力</h3><p>本場親自操作簡報的飛入動畫，讓錄製內容轉成技能；另在角色說明指定字型、顏色及完成後截圖。固定工作可設例行任務，錯誤則用具體現象與預期成果引導。這些做法減少重複溝通，但記憶仍可能過時，需要主動修正。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:44:24" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:44:24 ↗ 回放</a></article><article class="card"><h3>協作要看見相依關係，也要辨認資料來源</h3><p>Email Ethan 會向其他代理索取背景，也會等 Slide Sonya 的投影片完成再往下做。群組聊天把交接集中顯示，管理代理則可追蹤阻礙。但現場問卷尚未收妥時改用了既有咖啡樣本資料，不能把這段展示當成本次觀眾調查已全部完成。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:09:13" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:09:13 ↗ 回放</a></article><article class="card"><h3>批准機制與信任累積必須一起設計</h3><p>示範先設定回覆郵件必須詢問，之後確實出現被自訂規則攔下、由人選擇單次允許的流程。問答說明系統有基礎風險分類，再疊加個人規則；觀眾也指出請示過密會阻斷自主工作。授權要按工作風險調整，不能把記憶或自動審查當作零風險保證。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:15:51" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:15:51 ↗ 回放</a></article></div></section><section id="chapters"><div class="sec-head"><span class="idx">02</span><h2>沿著現場的順序看</h2></div><p class="sec-intro">點選章節可開啟 X 原始回放，請手動跳至標示時間；章節是依內容整理的閱讀段落，不是主辦方公布的精確分段。</p><div class="g-grid"><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>00:30:25 — 00:38:22</small><h3>01｜從聊天工具走向長期 AI 同事</h3><p>開場從聊天、輔助工具到負責成果的同事，解釋三項產品取向：持續存在的角色、可操作自己的電腦、在雲端執行。以記住簡報格式偏好為例，說明為何不應每個任務重開對話；結尾交棒進入具體企業工作示範。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>00:38:22 — 00:43:57</small><h3>02｜建立 Data Dan，口述兩題咖啡問卷</h3><p>實作安排資料、簡報、郵件三個代理合作，並從零建立 Data Dan。口述要求建立 Google Form，詢問每天喝幾杯咖啡與喜歡的舊金山咖啡店，再打開代理的 Linux 虛擬機觀察操作，同時介紹插件與需要人工批准的動作。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>00:43:57 — 00:49:30</small><h3>03｜親手教動畫，把品質要求寫進角色</h3><p>在 Slide Sonya 的電腦啟用 Teach a task，由人操作插入飛入動畫、播放檢查，再停止錄製生成技能。接著說明各代理電腦彼此隔離，以及人與代理分別編輯不同投影片的做法；角色描述另指定字型、色彩與完成後回傳截圖。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>00:49:30 — 00:53:38</small><h3>04｜排程簡報摘要，讓郵件沿用既有語氣</h3><p>示範提出每天早上九點摘要簡報變更與修改者的例行任務，也舉每週由簡報代理與郵件代理合作寄報告的例子。Email Ethan 可參考既有郵件整理寫作語氣，並嘗試草擬咖啡資料信件；此時資料仍未完成，先設定寄信前必須詢問。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>00:53:38 — 01:00:41</small><h3>05｜追蹤代理交接，實際遇到批准攔截</h3><p>Email Ethan 主動向 Data Dan 詢問咖啡資料，也依指示向 Slide Sonya 索取課程簡報背景。對話顯示資料尚未就緒，郵件代理改提既有樣本資料；稍後回覆郵件的動作被個人規則攔下，選擇單次允許後再進入草稿流程。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>01:00:41 — 01:06:13</small><h3>06｜分享模板、編輯草稿與建立群組聊天</h3><p>透過 Share as template 與 Marketplace 分享角色設定，品牌設計代理可統一字型與色彩，再依個人需求調整。郵件草稿視窗允許修改收件人與文字。表單完成後要求 QR 碼，並把三個代理放進群組，集中觀察原本分散的一對一交接。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>01:06:13 — 01:11:58</small><h3>07｜QR 碼沒有權限：排錯與替代資料</h3><p>觀眾掃碼後回報無存取權，示範者要求確認連結公開，讓代理檢查分享設定。等待期間改用既有測試試算表，要求在簡報末頁建立咖啡圖表，完成後再寄信；Email Ethan 表示等待投影片，呈現跨代理工作的相依順序。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>01:11:58 — 01:15:11</small><h3>08｜加一位管理者，專門追進度與阻礙</h3><p>現場新建管理者角色，職責是向資料、簡報與郵件三個代理收集工作狀態，並舉每兩小時詢問阻礙的排程。若表單無法分享，可由管理者協助回報與找人解除阻塞。示範保留工作繼續執行，接著開放現場問答，並未宣布整條流程完成。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>01:15:11 — 01:24:54</small><h3>09｜問答：批准、多人協作、內網與教學機制</h3><p>問答先釐清自動風險分類與自訂批准規則，再回應過度請示如何改善。多人與代理協作以 Slack 討論串為例，產品內多人群聊仍在開發；內網工具則取決於憑證與 VPN。影片教學回答停留在觀看錄影、存成技能，沒有深入說明底層實作。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間"><small>01:24:54 — 01:29:43</small><h3>10｜問答與收尾：記憶可修正，複製不帶舊記憶</h3><p>最後問答說明記憶持久保存但可要求修改；刪除其他代理後，要提醒協調者停止委派，不能假設它自動知道。複製代理保留角色卻從新記憶開始。收尾建議先挑一天中最惱人的重複工作，從所需成果倒推操作，再搭配教學與適當批准。</p></a></div></section><section id="concepts"><div class="sec-head"><span class="idx">03</span><h2>把概念接回真實示範</h2></div><p class="sec-intro">每個整理點都附原始回放的參考時間；示範結果不等於對所有情境的保證。</p><div class="g-grid"><article class="card g-concept"><h3>01 / 長期角色：保留工作背景，而不只保留一串聊天</h3><p>本場把代理視為一個有職責的工作單位：同一個角色可以跨任務與專案持續使用，累積使用者的格式偏好、溝通方式及工作背景。這和每次開新對話、重新交代所有事情不同。角色可依專長拆分，也可依專案拆分；重點是讓它知道自己負責什麼成果，而不是只給一張零散待辦清單。</p><div class="g-example"><strong>現場例子</strong><p>Data Dan 負責資料，Slide Sonya 負責投影片，Email Ethan 負責郵件。Email Ethan 不只處理這次咖啡調查，也被用來整理本場簡報摘要；簡報代理則可換品牌與主題繼續工作，不必為每份簡報重新建立一個角色。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:55:11" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:55:11 ↗ 回放</a></article><article class="card g-concept"><h3>02 / Computer use：讓代理直接操作網頁介面</h3><p>直接整合、MCP 與 API 並非唯一工作入口。本場透過代理自己的 Linux 虛擬機操作 Google Forms 與 Slides，讓沒有現成整合的介面也能納入工作。使用者可以開啟遠端電腦看進度，必要時接管操作。每個代理的電腦分開執行，雲端工作不依賴個人筆電一直開著，但服務本身的登入與分享權限仍須正確設定。</p><div class="g-example"><strong>現場例子</strong><p>現場新建 Data Dan 後，用語音要求建立兩題問卷：每天喝幾杯咖啡、喜歡哪家舊金山咖啡店。送出後點右上角電腦入口，觀察代理在表單介面逐步填入問題與選項，而不是只在聊天框回覆一份題目草稿。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:41:28" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:41:28 ↗ 回放</a></article><article class="card g-concept"><h3>03 / Teach a task：先示範一次，再存成技能</h3><p>遇到難以用文字精確描述的介面操作，可以在代理的電腦上啟用 Teach a task，親自示範並錄下流程。示範結束後，系統把觀察到的操作整理成可重用技能。這裡要分清楚：錄製時是人控制電腦，不是代理自己完成；後續能否正確套用，仍要看產物，不能只因技能已生成就視為任務驗收通過。</p><div class="g-example"><strong>現場例子</strong><p>示範者開啟 Slide Sonya 的簡報，進入插入動畫功能，選擇飛入效果並播放確認，再停止教學。問答時重新打開生成的動畫技能，說明日後可要求把同一效果套到另一段文字或物件；回答沒有提供逐格辨識等底層細節。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:44:42" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:44:42 ↗ 回放</a></article><article class="card g-concept"><h3>04 / 角色說明與例行任務：把品質要求和觸發時間分開</h3><p>角色描述適合放穩定的工作規格，例如簡報要用什麼字型、顏色，以及完成後需要回傳什麼證據。例行任務則處理何時執行與反覆執行的工作。把兩者分開，能讓同一角色在不同任務中維持一致品質，又不必每次手動發起。跨代理排程也可把摘要與寄送串起來，但本場只是示範設定及用途，沒有等到隔日驗證觸發。</p><div class="g-example"><strong>現場例子</strong><p>Slide Sonya 被要求完成投影片後傳回截圖；接著提出每天早上九點摘要共享簡報有哪些變動、由誰修改。另一個例子讓 Slide Sonya 和 Email Ethan 每週合作，把簡報變更寄給主管。時間與交付物都比『每天幫我整理一下』更明確。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:49:32" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:49:32 ↗ 回放</a></article><article class="card g-concept"><h3>05 / 批准是執行邊界，不只是聊天裡的承諾</h3><p>本場先在設定加入回覆郵件前必須詢問的規則，稍後實際看到動作被個人 auto review 規則攔下。問答補充，系統會用基礎分類機制判斷動作風險，使用者還能加上更細的限制。規則可以嚴格到建立資料夾也要批准，但每次中斷都會降低自主工作效率，因此需要按對外影響與使用經驗調整，而非一律放行。</p><div class="g-example"><strong>現場例子</strong><p>Email Ethan 嘗試回覆郵件時出現批准提示；示範者指出這正是先前的個人規則生效，再點 Allow once。後續草稿視窗可修改文字、收件人或刪除。觀眾追問太常請示是否失去自主性，回答則談到明確授權與記憶累積。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:59:26" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:59:26 ↗ 回放</a></article><article class="card g-concept"><h3>06 / 代理間交接：群組可見性與相依順序</h3><p>代理可一對一交換資料，也可在群組裡公開交接。講者強調群組的主要差異是可見性：使用者不用逐一點開各代理的訊息，就能看見誰在等待誰。任務若有先後關係，要說清楚前置產物與後續動作。也能另建管理者角色追蹤進度和阻礙；這是協調層的分工，不代表底層任務已經完成或不再需要人介入。</p><div class="g-example"><strong>現場例子</strong><p>在群組要求 Slide Sonya 以既有咖啡測試資料做末頁圖表，接著讓 Email Ethan 寄出說明。Email Ethan 回覆會等投影片到位再往下做。稍後又建立管理者，指定追蹤三位成員，並提出每兩小時詢問是否受阻的例行工作。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:10:20" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:10:20 ↗ 回放</a></article><article class="card g-concept"><h3>07 / 模板分享與角色複製，不等於共享所有歷史</h3><p>Share as template 讓角色設定可以在團隊內或公開 Marketplace 流通，適合傳播品牌格式與常用工作方式；複製角色則能針對不同對象微調任務與語氣。必須把設定重用和既有記憶分開理解：後段問答明確說，複製代理會保留角色方向，但從新的上下文與記憶開始，不會帶走原本累積的全部記憶。</p><div class="g-example"><strong>現場例子</strong><p>本場以品牌設計代理說明共享字型、色彩與排版規格的用途，也舉分別寫信給高階主管、一般使用者與內部同事的多個郵件角色。到問答時再提醒，複製 Email Ethan 並不代表複本也知道之前所有郵件的背景。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:25:57" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:25:57 ↗ 回放</a></article><article class="card g-concept"><h3>08 / 排錯要回報可觀察現象，而不是只說失敗</h3><p>當工作不如預期，先講清楚想產出的結果、使用者遇到的現象與可能卡住的條件，再讓代理往回檢查。示範者也建議在修正正確時給具體回饋，讓之後的工作有可沿用經驗。這不是保證代理一定能自動排除問題；本場最重要的教訓反而是，產物已建立與外部使用者真正能使用，可能是兩個不同的完成條件。</p><div class="g-example"><strong>現場例子</strong><p>問卷轉成 QR 碼後，觀眾回報『no access』。示範者要求確認連結公開，讓代理檢查分享設定，而不是重寫整份問卷。等待時改用先前測試試算表推進圖表演示；後面沒有明確宣布這次觀眾問卷已修復並完成資料寄送。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:06:43" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:06:43 ↗ 回放</a></article><article class="card g-concept"><h3>09 / 企業存取取決於授權，不是有電腦就能進內網</h3><p>觀眾問虛擬機能否使用企業內部工具，回答把條件放在可提供的憑證、VPN 與系統驗證方式上；以 MongoDB 存取及 1Password 整合說明可能入口。後續再說敏感輸入會經由產品內的視窗收集，而不是直接在虛擬機畫面輸入。這些是本場的產品說明，不是對任意企業設定都已完成部署或安全稽核的證明。</p><div class="g-example"><strong>現場例子</strong><p>內網問題的回答提到把代理電腦納入公司 VPN，再授予需要的工具權限。追問 1Password 登入時，示範者借用類似郵件草稿的視窗說明憑證輸入方式；現場沒有真的展示一套 VPN 或資料庫的完整連線設定過程。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:19:53" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:19:53 ↗ 回放</a></article><article class="card g-concept"><h3>10 / 記憶需要維護，過期協作關係要主動更正</h3><p>後段問答說記憶持久保存於 S3，但可以透過指示修改或要求忘記。持久並不代表永遠正確，也不表示角色會自動知道外部世界所有變化。尤其代理團隊成員被刪除後，曾經委派過它的協調者可能還沿用舊認知。學習重點是把記憶當成需要維護的工作背景，而不是一次寫入就再也不用檢查的權威資料。</p><div class="g-example"><strong>現場例子</strong><p>示範者曾刪除用於展示的兩個代理，再明確告訴幕僚長不要繼續使用或委派給它們。這個案例把早先『會記住你的偏好』補上另一面：團隊成員與工作規則改變時，也要向長期角色同步變更。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:25:19" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:25:19 ↗ 回放</a></article></div></section><section id="workflow"><div class="sec-head"><span class="idx">04</span><h2>從兩題問卷到協作交付：依現場示範歸納的六步</h2></div><p class="sec-intro">整理者依現場操作歸納；保留實際的批准等待、QR 碼權限失敗與改用測試資料，不將預定流程寫成全部成功的結果。</p><ol class="g-flow"><li class="card"><h3>1. 先分工，再給可交付的輸入</h3><p>建立 Data Dan，搭配已有的 Slide Sonya 與 Email Ethan。用語音明確提出兩題 Google Form：每日咖啡杯數與偏好的舊金山咖啡店，並指定選項；預定交付物是可填寫的表單，而非題目建議。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:40:24" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:40:24 ↗ 回放</a></li><li class="card"><h3>2. 看電腦操作，教會一次格式細節</h3><p>打開代理的雲端電腦查看進度。切到 Slide Sonya，以 Teach a task 親自示範飛入動畫、播放確認後停止錄製，形成技能；把固定字型、顏色與完成後回傳截圖寫成角色要求。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:44:24" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:44:24 ↗ 回放</a></li><li class="card"><h3>3. 設定批准規則，準備郵件草稿</h3><p>要求 Email Ethan 參照既有郵件語氣，整理咖啡資料或簡報背景，並設定回覆郵件前必須詢問。遇到攔截時確認動作再單次允許；在草稿視窗調整內容與收件人，不把產生草稿直接等同寄送完成。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:52:18" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:52:18 ↗ 回放</a></li><li class="card"><h3>4. 發布問卷後，用外部回饋確認可用性</h3><p>表單完成後要求轉成 QR 碼，邀請現場與遠端觀眾填寫。實際出現無存取權時，把問題回報為連結需要公開，讓代理檢查分享設定；這一步顯示建立表單和成功收集資料是不同關卡。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:06:13" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:06:13 ↗ 回放</a></li><li class="card"><h3>5. 在群組交接資料，說清楚前後相依</h3><p>因問卷仍卡住，改用先前的咖啡測試試算表，要求 Slide Sonya 在末頁製作圖表，再由 Email Ethan 準備寄送說明。群組中可看見郵件代理等待投影片，避免把尚未完成的前置工作誤認為已就緒。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:09:13" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:09:13 ↗ 回放</a></li><li class="card"><h3>6. 追蹤阻礙，驗看產物並維護記憶</h3><p>新增管理者收集三個代理的進度，可再設定定時追問阻礙。驗收時查看投影片、草稿與真正使用的資料來源；若協作者被刪除或規則改變，也要同步告知長期角色，避免之後沿用過期工作背景。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:12:13" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:12:13 ↗ 回放</a></li></ol></section><section id="limits"><div class="sec-head"><span class="idx">05</span><h2>哪些地方不能直接照單全收</h2></div><p class="sec-intro">分清楚現場示範、講者判斷與整理者提醒。</p><div class="g-grid"><article class="card"><h3>示範沒有證明本次觀眾資料已端到端交付</h3><p>QR 碼開放填寫後出現無存取權，之後以既有測試試算表推進圖表與郵件協作。收尾前沒有清楚宣布觀眾問卷已修好、資料已收完且郵件已成功寄出；應把已見的操作、預定成果與未確認結果分開。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:06:43" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:06:43 ↗ 回放</a></article><article class="card"><h3>過密的批准會讓雲端工作仍然卡住</h3><p>現場多次等待人工允許，問答也直接質疑這會削弱自主性。講者表示這次請示頻率並不尋常，並談到以明確授權與記憶改善。整理者提醒：單次允許、自訂規則與未來授權的範圍應分開確認，不宜一概取消安全檢查。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:17:21" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:17:21 ↗ 回放</a></article><article class="card"><h3>當時的預告，不代表所有功能已公開可用</h3><p>語音展示主要是語音轉文字；雙向語音被描述為內部已部署、希望近期推出。問答中的人與代理共用群組，已有 Slack 討論串使用例子，但 Grok Bot 內的多人群聊介面仍在開發。這些應按演講當時狀態理解。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 00:41:51" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">00:41:51 ↗ 回放</a></article><article class="card"><h3>記憶持久，不代表自動同步一切變動</h3><p>講者以刪除代理為例，說明協調者可能不知道原協作者已不存在，需要告知不再委派。複製角色則從新記憶開始。不要把『長期同事』理解成所有角色天然共享完整記憶，或永遠知道最新團隊狀態。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:25:19" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:25:19 ↗ 回放</a></article><article class="card"><h3>產品能力說明不等於完成安全或可靠性驗證</h3><p>整理者提醒：內網與 1Password 的回答是概念說明，沒有完整部署示範；『自己的電腦能做的都能做』也是講者對能力方向的概括。實際工作仍受登入、分享權限、模型操作速度與人工批准限制，不能推論為所有網站或企業環境都可無人值守完成。</p><a class="g-time" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" aria-label="開啟原始回放，請跳至 01:19:31" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">01:19:31 ↗ 回放</a></article></div><div class="g-note"><strong>辨識與來源限制：</strong>英文原稿是自動辨識，專名與少數語句仍需對照影音；直播原有的休息與中斷沒有補造內容。這是中文重點整理，不是逐句中文翻譯。<details class="reveal"><summary>查看專名疑點與整理核對紀錄</summary><ul><li>英文原稿在約 00:36:25、00:51:10、01:05:55、01:20:40、01:35:25 附近保留約 15 秒的分段接縫重複；中文整理不重複計入，公開版不提供原稿下載，請以原始回放核對。</li><li>GROCKBOT、rock pot、RockBot、GrockBot、GraphBot、grokba等依契約在中文統一為Grok Bot；原話請以原始回放核對。</li><li>議程署名為Roman Ugarte；2293.848秒明確交棒Amrita，2302.028秒回應Thank you, Roman，後續為現場實作與問答，不把整場話語一律歸給議程署名者。</li><li>簡報角色在英文辨識中有 SlideSonia、Slidesonia、slide Sonja、Sonya 等變體；實際群組畫面顯示 Slide Sonya，中文採畫面拼法。Slide Guru 是否為正式別名無法確認。</li><li>咖啡店選項辨識為ritual, fills, sight glass, and blue bottle；fills的品牌拼字未核實，內容未擅自補正。郵件收件人Jason DeMore及部分Marketplace人名亦未核實，不延伸人物資料。</li><li>原稿多次出現Cursor、SpaceX AI與one password等組織或產品稱呼；未外查其關係，正文避免推論組織隸屬，one password依語境整理為1Password。</li><li>01:29:44–01:31:05 的 Thank you, everybody 被辨識成約 81 秒長段；不能當作連續發言。實看 01:29:50 仍是舞台、01:30:00 已顯示休息。本頁止於最後明確收尾句，不據此推算謝辭的精確長度。</li><li>表單QR的無權限問題未見明確成功修復聲明；後續圖表／郵件使用既有sample data或test spreadsheet，未將其寫成本次觀眾調查結果。</li><li>影片教學問答並未回答底層是否截圖或如何取樣；只可確認講者描述觀看錄影並存成skill，不延伸技術實作。</li></ul></details><p class="g-small">頁面樣式已內嵌，範本的 Tailwind CDN 與 X 回放連結需要網路。</p></div></section><section id="transcript"><div class="sec-head"><span class="sec-num">06</span><h2>原始來源與公開範圍</h2></div><div class="g-note"><p>本頁僅公開中文編輯摘要與整理者自製圖解，不再散布完整逐字稿或原始講座截圖。講者原話與示範畫面請至原發布者的 X 回放觀看。</p><p>各章節與重點保留參考時間；連結會開啟完整回放，請手動跳至所示位置，並以原始影音為準。</p><a class="g-button" href="https://x.com/i/broadcasts/1AxRnZbVpjaxl" target="_blank" rel="noopener noreferrer">觀看 X 原始回放</a></div></section><div class="g-topnav"><a href="grok-bot-engineering.html">Grok Bot for Engineering</a><a href="grok-bot-product-managers.html">Grok Bot for Product Managers</a><a href="grok-bot-founders.html">Grok Bot for Founders</a></div><footer class="foot"><div>來源：Grok Bot Galaxy Day 1 原始回放 · 2026/09/15–16<br>中文編輯摘要與自製圖解；不重製完整逐字稿及原始講座截圖。</div><a href="../../index.html#collection">回到知識書庫</a><a href="../index.html">Grok Galaxy 活動總覽</a><div>視覺化工具：<a href="https://github.com/chenjackle45/html-visualizer" target="_blank" rel="noopener noreferrer">html-visualizer</a><br>錄影排程工作流程參考：<a href="https://github.com/shuotao/au2026" target="_blank" rel="noopener noreferrer">au2026</a>（工具署名不代表原始內容的再散布授權）。</div></footer></main><dialog id="export-dialog" class="g-dialog"><h2>本頁重點與評論</h2><textarea id="export-text" aria-label="待複製的本頁重點"></textarea><p id="export-status" aria-live="polite"></p><div class="g-toolbar"><button id="copy-export" class="g-button primary">確認複製</button><button id="close-export" class="g-button">關閉</button></div></dialog><script id="summary-data" type="application/json">"Grok Bot 101｜從咖啡問卷到簡報與郵件：建立會記憶、協作與請示的 AI 同事\n\n本場用咖啡問卷串起資料、簡報與郵件三個代理，說明 Grok Bot 的單位不是一次性對話，而是有職責、記憶與雲端電腦的長期同事。人要定義成果、教會操作、設定批准邊界並處理阻礙；現場的反覆請示與表單權限失敗，也讓這套協作方式的限制具體可見。\n\n用職責建立代理，而不是每個任務重開對話\n開場把 AI 從聊天、協作助手推向長期同事：代理負責一類工作，累積偏好與背景，再跨專案反覆使用。示範讓 Data Dan 管資料、Slide Sonya 管簡報、Email Ethan 管郵件；分工可以依專長或專案安排，不必每次從零重新解釋。 [00:32:52]\n\n雲端電腦補上直接整合做不到的操作\n每個代理有自己的 Linux 虛擬機，可以在網頁介面操作表單與簡報，也能搭配既有 MCP 或 API。使用者可查看、接管或錄製教學；任務不綁在個人筆電是否開著，但仍需要登入權限，也會受模型操作速度及批准等待影響。 [00:42:26]\n\n把示範、明確規則與回饋變成可重用能力\n本場親自操作簡報的飛入動畫，讓錄製內容轉成技能；另在角色說明指定字型、顏色及完成後截圖。固定工作可設例行任務，錯誤則用具體現象與預期成果引導。這些做法減少重複溝通，但記憶仍可能過時，需要主動修正。 [00:44:24]\n\n協作要看見相依關係，也要辨認資料來源\nEmail Ethan 會向其他代理索取背景，也會等 Slide Sonya 的投影片完成再往下做。群組聊天把交接集中顯示，管理代理則可追蹤阻礙。但現場問卷尚未收妥時改用了既有咖啡樣本資料，不能把這段展示當成本次觀眾調查已全部完成。 [01:09:13]\n\n批准機制與信任累積必須一起設計\n示範先設定回覆郵件必須詢問，之後確實出現被自訂規則攔下、由人選擇單次允許的流程。問答說明系統有基礎風險分類，再疊加個人規則；觀眾也指出請示過密會阻斷自主工作。授權要按工作風險調整，不能把記憶或自動審查當作零風險保證。 [01:15:51]\n\n來源：https://x.com/i/broadcasts/1AxRnZbVpjaxl\n時間戳為完整回放播放位置。"</script><style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea id="vt-popup-textarea" placeholder="對這段文字的評論 / 疑問 / 補充..."></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Grok Galaxy", id: "local", project: "grok-galaxy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script></body>
+</html>
