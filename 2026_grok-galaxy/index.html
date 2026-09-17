@@ -8,6 +8,14 @@
   <title>Grok Galaxy 2026 — 知識書庫</title>
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../assets/site.css">
+  <style>
+    /* 幕後工作室紀錄跟邀請演講是不同類型：三人現場互相討論，不是單人受邀演講，用橄綠色跟其他卡片區分。 */
+    .reading-card--studio { border-color: var(--olive); }
+    .reading-card--studio:hover { border-color: var(--olive); }
+    .reading-card--studio .card-meta > span:first-child { color: var(--olive); }
+    .reading-card--studio .card-link:hover .read-action { color: var(--olive); }
+    .reading-card--studio .tags span { background: color-mix(in srgb, var(--olive) 18%, var(--paper)); color: var(--olive); }
+  </style>
 </head>
 <body>
   <a class="skip-link" href="#day1">跳至第一天筆記</a>
@@ -20,9 +28,9 @@
       <p class="eyebrow">SOURCE COLLECTION / 2026</p>
       <h1 id="event-title">Grok Bot<br><span class="accent">Galaxy 2026.</span></h1>
       <p>從認識 AI 同事，到工程、產品、創業、銷售與客服工作中的協作。以活動為單位收藏，依每天的講題深入閱讀。</p>
-      <p>活動日期：2026 年 9 月 15–17 日（舊金山）。目前收錄第一、二天共八場中文整理；下列日期分組依活動當地時間。</p>
-      <div class="event-links"><a href="https://x.ai/galaxy">官方活動資訊 ↗</a><a href="https://x.com/i/broadcasts/1AxRnZbVpjaxl">第一天原始回放 ↗</a><a href="https://x.com/i/broadcasts/1PKqrNyvmYwGb">第二天原始回放 ↗</a><a href="day1/studio-build-log.html">第一天工作室幕後 ↗</a><a href="day2/studio-build-log.html">第二天工作室幕後 ↗</a></div>
-      <nav class="event-days" aria-label="活動日期"><a href="#day1">Day 1 · 4 篇筆記</a><a href="#day2">Day 2 · 4 篇筆記</a><span>Day 3 · 尚未收錄</span></nav>
+      <p>活動日期：2026 年 9 月 15–17 日（舊金山）。目前收錄第一、二天共八場講題中文整理，另加兩天工作室全天幕後紀錄；下列日期分組依活動當地時間。</p>
+      <div class="event-links"><a href="https://x.ai/galaxy">官方活動資訊 ↗</a><a href="https://x.com/i/broadcasts/1AxRnZbVpjaxl">第一天原始回放 ↗</a><a href="https://x.com/i/broadcasts/1PKqrNyvmYwGb">第二天原始回放 ↗</a></div>
+      <nav class="event-days" aria-label="活動日期"><a href="#day1">Day 1 · 4 篇筆記 + 幕後紀錄</a><a href="#day2">Day 2 · 4 篇筆記 + 幕後紀錄</a><span>Day 3 · 尚未收錄</span></nav>
     </section>
     <section class="collection wrap" id="day1" aria-labelledby="day1-title">
       <div class="section-heading"><div><p class="eyebrow">DAY 1 / LEARNING NOTES</p><h2 id="day1-title">從入門，到你的工作現場。</h2></div><p>中文重點 · 實作脈絡 · 原始來源</p></div>
@@ -31,6 +39,7 @@
         <article class="reading-card"><a class="card-link" href="day1/grok-bot-engineering.html"><div class="card-body"><div class="card-meta"><span>02 · 工程</span><span>Lingxi Li</span></div><h3>讓 AI 成為工程協作夥伴</h3><p class="card-description">從故障重現到修復證據，理解工程代理如何分工、交接並驗收成果。</p><div class="tags"><span>工程開發</span><span>代理協作</span></div><div class="card-footer"><span>第一天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
         <article class="reading-card"><a class="card-link" href="day1/grok-bot-product-managers.html"><div class="card-body"><div class="card-meta"><span>03 · 產品管理</span><span>Kevin Niparko</span></div><h3>從數據洞察，到產品原型</h3><p class="card-description">以航空購票為例，串起資料分析、需求文件、設計稿與工程派工。</p><div class="tags"><span>產品管理</span><span>工作流程</span></div><div class="card-footer"><span>第一天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
         <article class="reading-card"><a class="card-link" href="day1/grok-bot-founders.html"><div class="card-body"><div class="card-meta"><span>04 · 創辦人</span><span>Shub Gaur</span></div><h3>一個創辦人，一隊 AI 同事</h3><p class="card-description">把客戶準備、競品研究與產品追蹤，交給能長期累積經驗的 Bot 團隊。</p><div class="tags"><span>創業實務</span><span>知識累積</span></div><div class="card-footer"><span>第一天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
+        <article class="reading-card reading-card--studio"><a class="card-link" href="day1/studio-build-log.html"><div class="card-body"><div class="card-meta"><span>幕後 · 全天工作室</span><span>Matt、Lauren、Roshan</span></div><h3>三位主持人的第一天創業工作室</h3><p class="card-description">從開場到收尾的完整時間脈絡：保留選題、來賓追問、AI 助手分工與現場修正，不把正在做的事寫成已經成功。</p><div class="tags"><span>幕後花絮</span><span>工作室全紀錄</span></div><div class="card-footer"><span>第一天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
       </div>
     </section>
     <section class="collection wrap" id="day2" aria-labelledby="day2-title">
@@ -40,6 +49,7 @@
         <article class="reading-card"><a class="card-link" href="day2/grok-bot-sales.html"><div class="card-body"><div class="card-meta"><span>02 · 銷售</span><span>SpaceXAI Sales Team</span></div><h3>從找客戶，到更新商機</h3><p class="card-description">讓銷售 Bot 協助找聯絡人、準備會議與回寫客戶紀錄，寄信及更新前仍由人審閱。</p><div class="tags"><span>銷售流程</span><span>人工審閱</span></div><div class="card-footer"><span>第二天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
         <article class="reading-card"><a class="card-link" href="day2/grok-bot-sdrs.html"><div class="card-body"><div class="card-meta"><span>03 · 業務開發</span><span>Simon Lackowski</span></div><h3>把客戶研究，變成聯繫策略</h3><p class="card-description">串起潛在客戶研究、資料補全、優先排序與郵件草稿，讓業務開發更有依據。</p><div class="tags"><span>業務開發</span><span>客戶研究</span></div><div class="card-footer"><span>第二天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
         <article class="reading-card"><a class="card-link" href="day2/grok-bot-customer-support.html"><div class="card-body"><div class="card-meta"><span>04 · 客服</span><span>David Gan</span></div><h3>讓客服回覆，有依據可追溯</h3><p class="card-description">從知識庫查詢、例外交接到測試環境退款，建立保留人工核准與執行紀錄的流程。</p><div class="tags"><span>客服支援</span><span>授權與交接</span></div><div class="card-footer"><span>第二天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
+        <article class="reading-card reading-card--studio"><a class="card-link" href="day2/studio-build-log.html"><div class="card-body"><div class="card-meta"><span>幕後 · 全天工作室</span><span>Matt、Roshan、Lauren</span></div><h3>從轉向遊戲，到開始運作的工作室</h3><p class="card-description">沿著三位主持人整天回到工作室的每一段，看 Cupcake 從白板原型走到接上帳號與後端，也保留尚未修好的錯誤。</p><div class="tags"><span>幕後花絮</span><span>工作室全紀錄</span></div><div class="card-footer"><span>第二天</span><span class="read-action">開始閱讀 ↗</span></div></div></a></article>
       </div>
     </section>
     <section class="credits wrap" id="credits" aria-labelledby="credits-title"><p class="eyebrow">SOURCES & ACKNOWLEDGEMENTS</p><h2 id="credits-title">來源、公開範圍與致謝</h2><div class="credits-grid">
