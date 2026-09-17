@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grok Bot for Customer Support｜第二天學習筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script><style>
+html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-underline-offset:4px}button,input{font:inherit}button,a,summary{touch-action:manipulation}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}button{cursor:pointer}h1{max-width:23ch;overflow-wrap:anywhere}h2,h3{overflow-wrap:anywhere}h3{font-size:21px;font-weight:650;margin:0 0 12px}p{margin:0 0 14px;max-width:72ch}.wrap{padding:0 24px 70px}header.masthead{padding:28px 0 40px}.g-back{display:inline-block;margin:20px 0}.g-hero{display:block}.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.g-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.g-grid>*,.g-hero>*,.g-three>*{min-width:0}.g-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.g-meta span{background:var(--g100);padding:5px 12px;border-radius:6px;font-size:13px;color:var(--g700)}.g-lead{font-size:20px;color:var(--g700);max-width:60ch}.g-note{background:var(--g100);border-left:3px solid var(--clay);padding:18px 22px;border-radius:0 8px 8px 0;margin-top:22px;font-size:14px;color:var(--g700)}.g-time{font:13px var(--mono);white-space:nowrap;display:inline-block;border-bottom:1px solid var(--oat);text-decoration:none;margin:6px 0}.g-cite{margin-top:16px}.g-chapter{display:block;text-decoration:none;color:inherit;transition:border-color .15s}.g-chapter:hover{border-color:var(--clay)}.g-chapter small{font:12px var(--mono);color:var(--clay-d)}.g-chapter h3{margin:10px 0}.g-concept{margin-top:22px}.g-concept .g-example{background:var(--g100);padding:18px;border-radius:8px;margin-top:16px}.g-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:step}.g-flow li{counter-increment:step;position:relative;padding:24px 24px 24px 65px;background:var(--paper);border:1.5px solid var(--g300);border-radius:12px;min-width:0}.g-flow li:before{content:counter(step,decimal-leading-zero);position:absolute;left:20px;top:24px;font:18px var(--mono);color:var(--clay-d)}.g-term dt{font-weight:700;margin-bottom:8px}.g-term dd{margin:0;color:var(--g700)}.g-term{margin:0}.g-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.g-button{border:1px solid var(--g300);border-radius:8px;padding:10px 16px;background:var(--paper);color:var(--slate);text-decoration:none;font-size:14px;display:inline-block}.g-button.primary{background:var(--slate);color:var(--ivory);border-color:var(--slate)}.g-small{font-size:13px;color:var(--g700)}.g-status{min-height:26px;margin:10px 0;color:var(--g700);font-size:14px}.g-dialog{max-width:750px;width:92vw;border:1px solid var(--g300);border-radius:14px;padding:26px;background:var(--ivory);color:var(--slate)}.g-dialog::backdrop{background:rgba(20,20,19,.6)}.g-dialog textarea{width:100%;height:45vh;resize:vertical;padding:15px;border:1px solid var(--g300);border-radius:8px;font:14px/1.7 var(--sans);color:var(--slate);background:var(--paper)}.g-topnav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px}.g-topnav a{font-size:14px}.vt-comment-list{max-width:calc(100vw - 32px)}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-session-badge{border-radius:6px;letter-spacing:0}.sec-head{align-items:flex-start}.sec-head h2{line-height:1.35}.g-boundary p:last-child{margin-bottom:0}
+.g-hero h2{font-size:23px;font-weight:650;line-height:1.45;margin:18px 0}.g-note details{margin-top:12px}.g-note summary{cursor:pointer;font-weight:650}.g-note li{max-width:72ch;margin:10px 0}.g-note ul{padding-left:24px}
+
+@media(max-width:800px){.g-hero,.g-three{grid-template-columns:1fr}.g-grid,.g-flow{grid-template-columns:1fr}.g-hero{gap:22px}.wrap{padding:0 10px 70px}header.masthead{padding-top:16px}h1{font-size:38px;line-height:1.15}.g-lead{font-size:18px}section{margin-top:48px}.card{padding:20px}.g-flow li{padding-right:18px}.sec-head{gap:10px}.sec-head h2{font-size:25px}.g-meta span{font-size:12px}.g-toolbar>*{max-width:100%}}
+@media print{.g-toolbar,.g-topnav,.vt-comment-trigger,.vt-comment-pill,.g-dialog{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}h1{font-size:36px}}
+</style></head><body><main class="wrap"><nav aria-label="書庫與活動導覽"><a class="g-back" href="../../index.html#collection">← 回到知識庫</a> · <a href="../index.html#day2">Grok Galaxy 活動總覽</a></nav><header class="masthead"><div class="eyebrow">DAY 2 / 2026.09.17 / 講題學習筆記</div><div class="g-hero"><div><h1>Grok Bot for Customer Support</h1><h2>把客服回覆做成有依據、可交接、需核准的工作流程</h2><p class="g-lead">本場以虛構航空公司的客服環境，示範如何讓 Grok Bot 查閱知識庫、判斷是否足以回答、交接例外案件，並在 Stripe 沙盒（不動用真實金流的測試環境）處理退款。重點不是一次放開所有權限，而是從單一流程與唯讀開始，保留來源、人工核准及執行紀錄，再逐步擴大自動化範圍。</p><div class="g-meta"><span>議程講者：David Gan</span><span>表定台灣時間 07:00–08:00</span><span>繁體中文公開摘要</span></div><p class="g-small">適合客服營運、支援工程與知識庫負責人，尤其是想導入客服代理，又需要控制對外回覆、退款與文件修改風險的團隊。</p></div></div><nav class="toc" aria-label="本場內容導覽"><a href="#takeaways">重點</a><a href="#chapters">章節</a><a href="#concepts">實作與概念</a><a href="#workflow">操作流程</a><a href="#limits">限制</a><a href="#transcript">來源與公開範圍</a></nav></header><p class="g-small"><strong>用語先說清楚：</strong>本頁的「代理」是能代人使用工具、執行工作的 AI；「上下文」是它判斷事情時能讀到的背景資料。其他專門用語在下方詞彙區有白話解釋。</p><details class="g-note reveal"><summary>先看本場專門用語的白話解釋</summary><dl><dt><strong>Connector</strong></dt><dd>連接器，讓機器人讀取或操作既有工具。本場涉及工單、文件、通訊與資料庫；接上工具不代表已取得所有寫入權限。</dd><dt><strong>Routine</strong></dt><dd>依排程或事件啟動的工作安排，例如每小時查看特定風險工單，不必每次都由人在對話中手動要求開始。</dd><dt><strong>Knowledge base</strong></dt><dd>知識庫，集中保存代理回答時依據的文件。示範區分公開產品說明與內部退款規則，兩者不應一律對外揭露。</dd><dt><strong>SOP</strong></dt><dd>標準作業程序，說明某類工作如何處理及哪些條件允許操作。本場以內部十四天退款規則作為簡化示例。</dd><dt><strong>Handoff</strong></dt><dd>交接，將代理目前不能可靠解決的案件交由人或其他處理者接手；需要保留原因，並不代表問題已經解決。</dd><dt><strong>Evals / traces</strong></dt><dd>Evals 用案例評估改動；traces 記錄每次執行的耗時及來源。兩者用來除錯與觀察，不等同已證明系統完全可靠。</dd><dt><strong>Sandbox</strong></dt><dd>沙盒是與真實客戶及金流隔離的測試環境。Stripe 畫面明示此模式，因此本課的退款與取消不是正式交易。</dd><dt><strong>PR / code owner</strong></dt><dd>PR 是提出變更供審查的請求，code owner 是負責審核相關內容的人。本場用它們說明知識庫更新的批准流程。</dd></dl></details><div class="g-note g-boundary"><p><strong>怎麼對照影片：</strong>本頁時間戳全部是「完整回放檔案」的播放位置，不是台灣時鐘。整理範圍約 07:30:46–08:09:54。正式開場為回放 07:30:46 的客服工作坊問候，之前是遊戲工作室。07:59:49 附近的致謝只是簡報結束，後面仍有完整問答。最後回答導入優先順序後，講者交回攝影棚；以約 08:09:54 的轉場靜音起點作收尾界線。原稿把交棒句尾延至 08:10:34，跨過靜音，不能當作逐字精準時間。08:10:10 已是優惠卡，08:10:43 起已回到工作室。客服講座及問答有完整收尾；後面的遊戲製作與整日結語不屬於本課。</p><p>講者姓名依議程標示；現場可能多人發言，本頁不把所有發言都歸給同一人。中文摘要與時間定位可能有誤，請以原始影音為準。</p></div><div class="g-toolbar"><button class="g-button primary" id="preview-notes">預覽／複製本頁重點</button><a class="g-button" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer">開啟 X 完整回放</a></div><section id="takeaways"><div class="sec-head"><span class="idx">01</span><h2>先掌握這場的核心</h2></div><p class="sec-intro">先看重點，再按時間回看原始回放。不是產品功能清單，而是這場實際展示的用法。</p><div class="g-grid"><article class="card"><h3>先教會一個流程，再決定要不要分工</h3><p>現場雖有 Build、Reply、Alert、Tune 四個機器人，講者卻不建議照著名單預先拆隊。先用一個普通名稱的機器人學會一項工作，等任務範圍變大，或真的需要同時執行，再依實際需求拆開；分工是解決工作問題，不是導入前的必要儀式。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:40:13 ↗ 回放</a></article><article class="card"><h3>有來源才回答，不確定就交接</h3><p>Reply 不是看完工單就直接生成答案，而是先查知識、判斷信心，再決定回覆或轉交。密碼重設能找到文件；缺乏 SSO（單一登入，讓一組帳號登入多個服務）與 Okta 的資料時，則留下低信心交接紀錄，並讓 Alert 通知 Slack。重要案件需要被人看見，而不是被漂亮但無根據的答案掩蓋。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:46:35 ↗ 回放</a></article><article class="card"><h3>執行操作與對外揭露要分別設限</h3><p>退款案例同時使用內部政策與 Stripe 沙盒資料：符合十四天條件者示範取消與退款，超過期限者拒絕退款且不公開完整內規。這展示的是測試環境中的決策與狀態變更，不是真實金流；講者也明說，操作可以先要求人工核准，並依機器人分配權限。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:48:26 ↗ 回放</a></article><article class="card"><h3>補知識不能變成代理自行制定政策</h3><p>遇到 Wi-Fi 通行證能否共用的缺漏，Reply 先停下來，建議由 Tune 補入常見問題（FAQ）。講者明確給出「不允許」的政策並授權修改，才重新要求回覆。知識庫的錯誤會影響後續許多工單，因此改善流程仍須保留人的最後決定權，而非讓代理猜規則。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:53:05 ↗ 回放</a></article><article class="card"><h3>降成本要從資料定位與案件分類下手</h3><p>問答把效率問題拆成兩件事：提供明確工單 ID，減少代理先列出所有案件再搜尋姓名的成本；把低複雜度同類工單分類後批次處理。講者分享每件約一至二美元與簡單案件約二角美元的個人試驗結果，但這不是固定售價，也不能推論所有案件都有相同節省。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:08:26 ↗ 回放</a></article></div></section><section id="chapters"><div class="sec-head"><span class="idx">02</span><h2>沿著現場的順序看</h2></div><p class="sec-intro">點選章節會開啟完整回放，請手動跳至所示時間；章節是依內容整理的閱讀段落，不是主辦方公布的精確分段。</p><div class="g-grid"><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:30:46 — 07:35:20</small><h3>從聊天介面到持續工作的客服同事</h3><p>講者先介紹本場以示範為主的安排，再說明 Grok Bot 可在使用者離線後繼續工作，並透過定時或事件觸發啟動任務。Plain、Zendesk、Intercom、Slack、Notion 等連接器讓它接入既有工作方式；缺少連接器可嘗試交由雲端代理建置，但這一段並未現場實作。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:35:20 — 07:39:32</small><h3>四種用途與漸進式授權</h3><p>客服用途包括回答工單、重要案件告警、內部知識問答及回顧歷史紀錄尋找改善。回答客戶可先從摘要、草稿與內部備註開始，再逐步開放正式回覆；流失風險告警則以服務超過六個月的客戶為假設例子，不是現場已驗證的成效數據。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:39:32 — 07:43:05</small><h3>四個機器人與虛構航空公司的資料環境</h3><p>Build 負責設定，Reply 回答，Alert 通知，Tune 改善系統；講者強調新手不必照搬這套分工。示範使用 FlyLo 虛構航空公司、每月二十美元的網路訂閱、Notion 公開文件與內部退款政策，再接上 Plain、Stripe 與 Slack，形成可觀察的測試環境。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:43:05 — 07:47:27</small><h3>密碼重設能回答，缺少 SSO 知識就交接</h3><p>Alex 的密碼重設問題得到附來源與信心備註的回覆；畫面同時顯示郵件受抑制而未能寄出，不能把工單上的文字等同送達。Ben 的 SSO／Okta 問題沒有相應文件，代理因此交接，並因企業客戶無法登入而觸發 Slack 告警，保留人工介入的路徑。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:47:27 — 07:51:14</small><h3>在 Stripe 沙盒驗證兩種退款結果</h3><p>Carter 剛訂閱，符合示範用十四天退款規則；Damon 約已訂閱二十天，應拒絕退款。講者補上客戶 ID 後，刷新 Stripe 查看 Carter 的取消與退款狀態，以及 Damon 狀態維持不變。Damon 的回覆只提出可安排期末取消，不能寫成現場已完成取消。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:51:14 — 07:55:21</small><h3>先核准政策，再補 FAQ 並重試</h3><p>Elena 詢問 Wi-Fi 通行證能否共用，知識庫尚無答案，Reply 留下交接備註並建議交給 Tune。講者明確授權新增不可同時共用的規則，Notion 中以綠字呈現新增內容；重新要求回答後，Reply 才引用該文件。中間另有未展示的項目被跳過，內容無法據此補寫。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:55:21 — 07:59:49</small><h3>Slack 內部問答與權限等待</h3><p>講者在 Slack 以內部人員身分詢問退款 SOP，展示同一知識庫也可支援同事。流程先要求發文權限，批准後仍有等待與再次提示，最後才顯示回覆。結語回到唯讀起步、特定動作人工核准，以及不同機器人可以擁有不同權限，而非承諾每次即時完成。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>07:59:49 — 08:02:21</small><h3>問答：按用量計費與低複雜度批次處理</h3><p>簡報致謝之後仍繼續問答。費用依工作流程中的分類、評估與紀錄等操作而變化；講者自述中等至複雜工單約一至二美元，簡單案件先分組再用腳本處理可降至約二角美元。這些是個人使用經驗，沒有公開樣本、完整計費明細或可泛化的對照實驗。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>08:02:21 — 08:05:10</small><h3>問答：用執行紀錄除錯，電話客服仍待探索</h3><p>面對多機器人出錯難以追查的問題，講者說明可透過 Supabase 連接 Postgres，分別保存評估與執行紀錄，記下時間、讀過及採用的文件，連試跑也留下紀錄。這部分沒有現場展示資料表；電話客服則只提到他人的電話預約影片，講者坦言自己嘗試不多。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間"><small>08:05:10 — 08:09:54</small><h3>問答：企業審核、精確 ID 與導入優先順序</h3><p>企業治理問題聚焦非技術人員可能誤改正式資料。講者建議先提供受限範本，並用 GitHub 分支、PR、BugBot 與負責人批准管理知識修改。接著說明精確工單 ID 能減少查找成本，最後建議先處理高頻問題並建立知識與評估，再交回攝影棚，完整結束問答。</p></a></div></section><section id="concepts"><div class="sec-head"><span class="idx">03</span><h2>把概念接回真實示範</h2></div><p class="sec-intro">每個整理點都保留回放參考時間；示範結果不等於對所有情境的保證。</p><div class="g-grid"><article class="card g-concept"><h3>01 / 角色分工是成長後的選擇，不是起步門檻</h3><p>Build、Reply、Alert、Tune 是這場示範的職責配置，不是產品要求每個團隊必須建立的四種角色。講者建議先教一個機器人跑通一條流程，等範圍變大或需要同時工作時才拆分。這讓團隊先釐清工作本身，再處理協作與權限，而不是一開始就承擔多個代理互相傳話的複雜度。</p><div class="g-example"><strong>現場例子</strong><p>現場由 Reply 判斷工單能否回答，遇到企業登入阻塞時通知 Alert，再由 Alert 發到 Slack；Tune 則用於補充 FAQ。這些分工有各自的觸發情境，講者沒有要求初學者先把四個機器人全部建好才開始使用。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:40:13 ↗ 回放</a></article><article class="card g-concept"><h3>02 / 把回覆變成可追溯的決策流程</h3><p>知識庫提供依據，代理流程則規定如何使用依據。兩者不能混在一起：先讀工單、找相關知識，再決定回覆或交接，執行後留下備註。備註中的問題分類、信心與來源可讓人檢查回答基礎；這是可觀察的處理紀錄，不代表能讀取模型完整的內部推理。</p><div class="g-example"><strong>現場例子</strong><p>Alex 問如何重設密碼，工單中出現高信心判斷、問題根因及公開文件連結，回答步驟也對應文件。不過同一畫面有郵件寄送遭抑制的錯誤，因此只能說回覆文字已建立，不能因此推定客戶收到郵件。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:42:28 ↗ 回放</a></article><article class="card g-concept"><h3>03 / 低信心交接也可以是正確的產出</h3><p>客服自動化不必把每張工單都回答掉。資料不足時，明確留下原因並移交處理，比猜測一個看似完整的答案更符合這場示範的規則。交接與告警又是不同動作：前者說明案件仍需處理，後者把符合重要條件的案件主動送到團隊正在看的通道。</p><div class="g-example"><strong>現場例子</strong><p>Ben 的 SSO／Okta 問題未被示範用的小型知識庫涵蓋。Reply 即使收到「試著回答」的要求，仍回報缺乏公開文件與內規、轉交人工；企業客戶無法登入的條件又讓 Alert 通知 Slack，而不是把未解決案件包裝成已解決。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:46:35 ↗ 回放</a></article><article class="card g-concept"><h3>04 / 退款需要政策、客戶狀態與動作權限一起成立</h3><p>光有退款規則還不夠，代理必須找到正確客戶，讀取訂閱狀態，再在允許的權限內操作。現場採用十四天期限作為簡化案例，也說明可以要求人在執行前批准。Stripe 畫面明示這是沙盒；取消、退款與金額都是測試資料的變化，不能寫成真實付款處理。</p><div class="g-example"><strong>現場例子</strong><p>Carter 剛訂閱而獲示範退款，Damon 約訂閱二十天而被拒。講者補上客戶 ID 後再刷新 Stripe，比對前後狀態；Damon 的回覆只是提出可安排期末取消，畫面狀態維持原樣，並未展示已執行這項取消。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:48:26 ↗ 回放</a></article><article class="card g-concept"><h3>05 / 知識缺口與政策制定必須分開</h3><p>發現文件沒有答案，不等於代理獲准自行創造一條規定。改善代理可以提出補知識的需求，但本場由人決定政策內容並授權修改，然後才重新回答工單。這道核准控制的不只是當前答案，也控制後續所有引用該文件的回覆，避免一次猜測變成團隊長期依據。</p><div class="g-example"><strong>現場例子</strong><p>Elena 問通行證能否與另一人共用。Reply 先停止回覆，建議 Tune 補 FAQ；講者明說不允許並要求新增，Notion 以綠色文字顯示政策。重新執行後，Reply 才有可引用的章節，並據此形成回答。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:53:05 ↗ 回放</a></article><article class="card g-concept"><h3>06 / 同一知識庫可以服務同事，但寫入權限仍需處理</h3><p>內部客服同事需要的是完整作業規則，外部客戶則不應收到所有內部文件。講者用 Slack 示範讓同事詢問退款 SOP，讓既有知識資產不只用於客戶答案。然而連接到 Slack 不代表每個機器人都能直接發文；現場仍出現批准要求，權限與執行等待必須納入流程。</p><div class="g-example"><strong>現場例子</strong><p>內部問答先要求允許發 Slack 訊息，講者選擇對這類動作持續允許，之後又重新提示並等待。最後畫面呈現回覆與表情反應；這不是一次提問立即完成的展示，也沒有證明所有內外部存取控制都已測試。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:56:31 ↗ 回放</a></article><article class="card g-concept"><h3>07 / 從唯讀到寫入，按機器人分配權限</h3><p>唯讀表示只能查詢，不直接改資料或對外發送；寫入則包含更新文件、退款與發訊息等會改變外界狀態的動作。講者建議先唯讀，再逐步開放寫入，特定動作保留人工核准，並讓不同機器人擁有不同權限。便利性不應被誤解成必須對整隊一次授予全部能力。</p><div class="g-example"><strong>現場例子</strong><p>Slack 示範中的批准比講者預期更保守，他仍指出對寫入來說這通常比較好。同一團隊中，一個機器人可以自動發 Slack，另一個則仍要先詢問；這是現場結語給的配置方向，不是完整企業權限管理介面的展示。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:59:07 ↗ 回放</a></article><article class="card g-concept"><h3>08 / 用評估與執行紀錄定位問題，而非只看最後答案</h3><p>Evals 是用固定案例檢查改動是否仍符合要求；traces 是每次執行留下的可查紀錄。講者在問答描述將兩者存進 Postgres，包含耗時、讀過與最後採用的文件，讓人判斷問題出在查找還是回答。即使只寫草稿、內部問答或試跑，也應保留紀錄；資料表內容並未在台上實際展示。</p><div class="g-example"><strong>現場例子</strong><p>講者表示透過 Supabase 連接器讓 Build 建立評估與追蹤資料表，再要求每次 Reply 執行時寫入。之後可讓改善代理回顧這些紀錄找出修正方向。這是對自己設定方式的說明，不能稱為本場已驗證的自動改善成效。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:02:38 ↗ 回放</a></article><article class="card g-concept"><h3>09 / 把知識修改放進可審核的版本流程</h3><p>回答企業非技術人員的風險疑慮時，講者提出受限範本與 GitHub 的版本管理做法。知識變更先開分支與 PR，經 BugBot 檢查、通知負責人、執行該分支的評估，再由有責任的人批准。這把「能提案」與「能直接改正式知識」分開，但現場沒有完成部署或安全保證的展示。</p><div class="g-example"><strong>現場例子</strong><p>講者描述讓改善機器人必須建立 PR，不能自己直接改知識庫；評估也可針對 PR 分支執行，而不是只對主分支。負責人因此能先看到改動後的回答表現，再決定是否合併，保留非技術同事參與改善的空間。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:07:22 ↗ 回放</a></article><article class="card g-concept"><h3>10 / 精確識別碼減少查找，不等於保證批次更便宜</h3><p>只說「回答 Alex」會讓代理先取得未結案件、搜尋姓名，再找出應處理的工單。給明確工單 ID 能縮短這段資料定位工作。講者另外把低複雜度案件分組後用腳本批次處理；兩者都可能省用量，但仍取決於分類、紀錄與評估的工作量，不能把個人觀察當成固定單價。</p><div class="g-example"><strong>現場例子</strong><p>現場退款等待時，講者補上客戶 ID 以便更快找到資料；問答再以工單 ID 解釋相同原理。他自述一般中複雜工單約一至二美元，分組後的簡單案件約二角美元，並未提供樣本規模或每一項成本的明細。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:08:26 ↗ 回放</a></article></div></section><section id="workflow"><div class="sec-head"><span class="idx">04</span><h2>從一張工單建立可控客服流程</h2></div><p class="sec-intro">整理者依現場示範與問答歸納的導入順序，不是講者逐字列出的單一操作清單；退款僅在沙盒演示，資料庫紀錄與 PR 審核僅有口頭說明。</p><ol class="g-flow"><li class="card"><h3>先選高頻問題，準備受限資料</h3><p>找出最常出現的問題，整理公開說明、內部作業規則及不能自行決定的事項。先用一個機器人處理一條流程，測試時保留唯讀或人工核准，產出是可引用的知識與清楚的行動界線。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:09:23 ↗ 回放</a></li><li class="card"><h3>接入工具並明確定位工單</h3><p>把工單、知識庫與通訊工具接到需要的機器人，提供具體工單或客戶 ID，避免讓代理先逐筆翻找大量資料。現場使用預先設定的連接器；這一步的產出是正確案件與可用來源，不是已完成處理。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:43:32 ↗ 回放</a></li><li class="card"><h3>查來源，決定回答或交接</h3><p>先辨識問題，再查找相關文件；有足夠依據才形成答案，缺少知識就留下交接原因。符合重要條件時另外通知 Slack。保留信心、問題與來源備註，讓人能檢查代理為何選擇這條處理路徑。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:42:28 ↗ 回放</a></li><li class="card"><h3>核准必要動作，檢查外部結果</h3><p>對退款、訂閱修改或發文設定核准要求，執行後查看目標系統的狀態，而不只接受機器人自稱完成。現場刷新 Stripe 沙盒確認結果；工單有回覆文字也不等於郵件送達，寄送錯誤必須另行處理。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:50:21 ↗ 回放</a></li><li class="card"><h3>補足缺漏後，重新回答同一案件</h3><p>遇到知識缺口，先由人確認正確政策，再批准新增文件。更新後重跑原本無法回答的工單，確認答案能指向新來源。現場以不能同時共用 Wi-Fi 通行證為例，示範停止、核准、補知識與重新回覆。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:52:40 ↗ 回放</a></li><li class="card"><h3>留下紀錄，再逐步擴大自動化</h3><p>依問答建議，保存每次執行的耗時與來源，使用固定案例評估變更；必要時讓知識修改經 PR 與人工批准。先找可安全分類的簡單案件，再評估批次處理是否省成本，別從一開始就讓所有案件全自動運作。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:02:38 ↗ 回放</a></li></ol></section><section id="limits"><div class="sec-head"><span class="idx">05</span><h2>哪些地方不能直接照單全收</h2></div><p class="sec-intro">分清楚現場示範、講者判斷與整理者提醒。</p><div class="g-grid"><article class="card"><h3>示範政策與沙盒交易不能直接搬到正式金流</h3><p>FlyLo 是虛構航空公司，每月二十美元與十四天退款條件都是簡化示範。07:50:00 的 Stripe 橫幅明示沙盒不影響真實客戶或付款。講者說可以設人工核准；整理者提醒：本課不是對任何正式退款政策、資料存取權或生產環境部署的背書。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:50:00 ↗ 回放</a></article><article class="card"><h3>工單上有答案，不等於郵件已寄達</h3><p>畫面核對：07:45:00 的 Plain 紅色警告顯示測試收件地址位於 suppression list（禁止寄送名單），無法寄出郵件；講者口頭則說機器人已回覆。應分開描述回覆文字已產生與郵件送達失敗，不可把這段當成端到端寄送成功。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:45:00 ↗ 回放</a></article><article class="card"><h3>等待、再次提示與未展示項目都要保留</h3><p>Slack 內部問答先要求發文批准，之後仍等待並再次提示，最後才出現回覆。另外，07:54:00 左右講者跳過另一項原先準備的內容，未交代是什麼，不能靠猜測補全。資料庫追蹤與分支評估則僅在問答中描述，沒有現場展示成效。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">07:56:31 ↗ 回放</a></article><article class="card"><h3>個人用量觀察不是產品固定售價</h3><p>每件一至二美元及簡單案件約二角美元，是講者對自己流程的經驗描述；分類、記錄與評估都可能改變用量。他提到其他客服代理與人工處理的費用比較，也沒有提供可核對的樣本與計費細目，不能據此製作保證節省比例。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:00:42 ↗ 回放</a></article><article class="card"><h3>自我改善仍需人核准，電話客服未驗證</h3><p>新增 FAQ 的正確規則由講者決定；企業問答也建議受限範本、PR 與負責人批准，不能將此概括成代理已可安全地自行改寫政策。電話客服方面，講者明說自己嘗試不多，只引用他人的電話預約例子，沒有展示本場的電話支援實作。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟完整回放，請手動跳至所示時間">08:04:36 ↗ 回放</a></article></div><div class="g-note"><strong>辨識與來源限制：</strong>來源與公開範圍是自動辨識，專名與少數語句仍需對照影音；直播原有的休息與中斷沒有補造內容。這是中文重點整理，不是逐句中文翻譯。<details class="reveal"><summary>查看專名疑點與原稿核對紀錄</summary><ul><li>原始辨識將 Grok Bot 寫為 Grokbot、RockBot 等變體；中文整理統一為本案名稱，英文短引文保留原稿。</li><li>原稿的 fly low 依現場畫面整理為 FlyLo；SuperBase 依資料庫連接器語境整理為 Supabase；plain／plane 作為客服系統名稱時整理為 Plain。</li><li>GitHub 後另一工具被辨識為 Origin，專名未能確認；因此只整理明確的 GitHub 分支、PR 與審核流程。</li><li>成本、評估資料表與企業審核配置主要來自講者自述，不代表本場已實測其正式環境效果；電話客服仍屬未展示的探索方向。</li><li>自動辨識時間戳不是逐字對齊；收尾交棒句的結束時間跨越轉場靜音，課程終點只能標示為約 08:09:54。</li></ul></details><p class="g-small">頁面樣式已內嵌，範本的 Tailwind CDN 與 X 回放連結需要網路。</p></div></section><section id="transcript"><div class="sec-head"><span class="sec-num">06</span><h2>原始來源與公開範圍</h2></div><div class="g-note"><p>本頁僅公開中文編輯摘要與整理者自製圖解，不再散布完整逐字稿或原始講座截圖。講者原話與示範畫面請至原發布者的 X 回放觀看。</p><p>各章節與重點保留參考時間；連結會開啟完整回放，請手動跳至所示位置，並以原始影音為準。</p><a class="g-button" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer">觀看 X 原始回放</a></div></section><div class="g-topnav"><a href="grok-bot-sales-engineering.html">Grok Bot for Sales Engineering</a><a href="grok-bot-sales.html">Grok Bot for Sales</a><a href="grok-bot-sdrs.html">Grok Bot for SDRs</a></div><footer class="foot"><div>來源：Grok Bot Galaxy Day 2 原始回放 · 2026/09/16–17<br>中文編輯摘要與自製圖解；不重製完整逐字稿及原始講座截圖。</div><a href="../../index.html#collection">回到知識書庫</a><a href="../index.html#day2">Grok Galaxy 活動總覽</a><div>視覺化工具：<a href="https://github.com/chenjackle45/html-visualizer" target="_blank" rel="noopener noreferrer">html-visualizer</a><br>錄影排程工作流程參考：<a href="https://github.com/shuotao/au2026" target="_blank" rel="noopener noreferrer">au2026</a>（工具署名不代表原始內容的再散布授權）。</div></footer></main><dialog id="export-dialog" class="g-dialog"><h2>本頁重點與評論</h2><textarea id="export-text" aria-label="待複製的本頁重點"></textarea><p id="export-status" aria-live="polite"></p><div class="g-toolbar"><button id="copy-export" class="g-button primary">確認複製</button><button id="close-export" class="g-button">關閉</button></div></dialog><script id="summary-data" type="application/json">"Grok Bot for Customer Support｜把客服回覆做成有依據、可交接、需核准的工作流程\n\n本場以虛構航空公司的客服環境，示範如何讓 Grok Bot 查閱知識庫、判斷是否足以回答、交接例外案件，並在 Stripe 沙盒（不動用真實金流的測試環境）處理退款。重點不是一次放開所有權限，而是從單一流程與唯讀開始，保留來源、人工核准及執行紀錄，再逐步擴大自動化範圍。\n\n先教會一個流程，再決定要不要分工\n現場雖有 Build、Reply、Alert、Tune 四個機器人，講者卻不建議照著名單預先拆隊。先用一個普通名稱的機器人學會一項工作，等任務範圍變大，或真的需要同時執行，再依實際需求拆開；分工是解決工作問題，不是導入前的必要儀式。 [07:40:13]\n\n有來源才回答，不確定就交接\nReply 不是看完工單就直接生成答案，而是先查知識、判斷信心，再決定回覆或轉交。密碼重設能找到文件；缺乏 SSO（單一登入，讓一組帳號登入多個服務）與 Okta 的資料時，則留下低信心交接紀錄，並讓 Alert 通知 Slack。重要案件需要被人看見，而不是被漂亮但無根據的答案掩蓋。 [07:46:35]\n\n執行操作與對外揭露要分別設限\n退款案例同時使用內部政策與 Stripe 沙盒資料：符合十四天條件者示範取消與退款，超過期限者拒絕退款且不公開完整內規。這展示的是測試環境中的決策與狀態變更，不是真實金流；講者也明說，操作可以先要求人工核准，並依機器人分配權限。 [07:48:26]\n\n補知識不能變成代理自行制定政策\n遇到 Wi-Fi 通行證能否共用的缺漏，Reply 先停下來，建議由 Tune 補入常見問題（FAQ）。講者明確給出「不允許」的政策並授權修改，才重新要求回覆。知識庫的錯誤會影響後續許多工單，因此改善流程仍須保留人的最後決定權，而非讓代理猜規則。 [07:53:05]\n\n降成本要從資料定位與案件分類下手\n問答把效率問題拆成兩件事：提供明確工單 ID，減少代理先列出所有案件再搜尋姓名的成本；把低複雜度同類工單分類後批次處理。講者分享每件約一至二美元與簡單案件約二角美元的個人試驗結果，但這不是固定售價，也不能推論所有案件都有相同節省。 [08:08:26]\n\n來源：https://x.com/i/broadcasts/1PKqrNyvmYwGb\n時間戳為完整回放播放位置；請開啟來源後手動跳至所示時間。"</script><style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea id="vt-popup-textarea" placeholder="對這段文字的評論 / 疑問 / 補充..."></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Grok Galaxy", id: "local", project: "grok-galaxy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script></body>
+</html>

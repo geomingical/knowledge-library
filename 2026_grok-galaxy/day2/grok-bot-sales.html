@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Grok Bot for Sales｜第二天學習筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script><style>
+html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-underline-offset:4px}button,input{font:inherit}button,a,summary{touch-action:manipulation}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}button{cursor:pointer}h1{max-width:23ch;overflow-wrap:anywhere}h2,h3{overflow-wrap:anywhere}h3{font-size:21px;font-weight:650;margin:0 0 12px}p{margin:0 0 14px;max-width:72ch}.wrap{padding:0 24px 70px}header.masthead{padding:28px 0 40px}.g-back{display:inline-block;margin:20px 0}.g-hero{display:block}.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.g-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.g-grid>*,.g-hero>*,.g-three>*{min-width:0}.g-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.g-meta span{background:var(--g100);padding:5px 12px;border-radius:6px;font-size:13px;color:var(--g700)}.g-lead{font-size:20px;color:var(--g700);max-width:60ch}.g-note{background:var(--g100);border-left:3px solid var(--clay);padding:18px 22px;border-radius:0 8px 8px 0;margin-top:22px;font-size:14px;color:var(--g700)}.g-time{font:13px var(--mono);white-space:nowrap;display:inline-block;border-bottom:1px solid var(--oat);text-decoration:none;margin:6px 0}.g-cite{margin-top:16px}.g-chapter{display:block;text-decoration:none;color:inherit;transition:border-color .15s}.g-chapter:hover{border-color:var(--clay)}.g-chapter small{font:12px var(--mono);color:var(--clay-d)}.g-chapter h3{margin:10px 0}.g-concept{margin-top:22px}.g-concept .g-example{background:var(--g100);padding:18px;border-radius:8px;margin-top:16px}.g-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:step}.g-flow li{counter-increment:step;position:relative;padding:24px 24px 24px 65px;background:var(--paper);border:1.5px solid var(--g300);border-radius:12px;min-width:0}.g-flow li:before{content:counter(step,decimal-leading-zero);position:absolute;left:20px;top:24px;font:18px var(--mono);color:var(--clay-d)}.g-term dt{font-weight:700;margin-bottom:8px}.g-term dd{margin:0;color:var(--g700)}.g-term{margin:0}.g-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.g-button{border:1px solid var(--g300);border-radius:8px;padding:10px 16px;background:var(--paper);color:var(--slate);text-decoration:none;font-size:14px;display:inline-block}.g-button.primary{background:var(--slate);color:var(--ivory);border-color:var(--slate)}.g-small{font-size:13px;color:var(--g700)}.g-status{min-height:26px;margin:10px 0;color:var(--g700);font-size:14px}.g-dialog{max-width:750px;width:92vw;border:1px solid var(--g300);border-radius:14px;padding:26px;background:var(--ivory);color:var(--slate)}.g-dialog::backdrop{background:rgba(20,20,19,.6)}.g-dialog textarea{width:100%;height:45vh;resize:vertical;padding:15px;border:1px solid var(--g300);border-radius:8px;font:14px/1.7 var(--sans);color:var(--slate);background:var(--paper)}.g-topnav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px}.g-topnav a{font-size:14px}.vt-comment-list{max-width:calc(100vw - 32px)}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-session-badge{border-radius:6px;letter-spacing:0}.sec-head{align-items:flex-start}.sec-head h2{line-height:1.35}.g-boundary p:last-child{margin-bottom:0}
+.g-hero h2{font-size:23px;font-weight:650;line-height:1.45;margin:18px 0}.g-note details{margin-top:12px}.g-note summary{cursor:pointer;font-weight:650}.g-note li{max-width:72ch;margin:10px 0}.g-note ul{padding-left:24px}
+
+@media(max-width:800px){.g-hero,.g-three{grid-template-columns:1fr}.g-grid,.g-flow{grid-template-columns:1fr}.g-hero{gap:22px}.wrap{padding:0 10px 70px}header.masthead{padding-top:16px}h1{font-size:38px;line-height:1.15}.g-lead{font-size:18px}section{margin-top:48px}.card{padding:20px}.g-flow li{padding-right:18px}.sec-head{gap:10px}.sec-head h2{font-size:25px}.g-meta span{font-size:12px}.g-toolbar>*{max-width:100%}}
+@media print{.g-toolbar,.g-topnav,.vt-comment-trigger,.vt-comment-pill,.g-dialog{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}h1{font-size:36px}}
+</style></head><body><main class="wrap"><nav aria-label="書庫與活動導覽"><a class="g-back" href="../../index.html#collection">← 回到知識庫</a> · <a href="../index.html#day2">Grok Galaxy 活動總覽</a></nav><header class="masthead"><div class="eyebrow">DAY 2 / 2026.09.17 / 講題學習筆記</div><div class="g-hero"><div><h1>Grok Bot for Sales</h1><h2>把銷售工作交給專職 Bot：從找客戶、備會到更新商機</h2><p class="g-lead">本場把銷售助理拆成一組專職 Bot：找對聯絡人、讀懂客戶發言、準備郵件與簡報，再把會議內容回寫到客戶紀錄。關鍵不是多問幾個問題，而是接上既有工具、交付明確產物，並保留寄信與更新資料前的人工審閱；自動排程與分工方式則須依成本和工作習慣調整。</p><div class="g-meta"><span>議程講者：SpaceXAI Sales Team</span><span>表定台灣時間 03:30–05:00</span><span>繁體中文公開摘要</span></div><p class="g-small">適合負責開發商機、經營重要客戶與推動團隊工具採用的業務人員，尤其是每天在郵件、Slack、會議紀錄與 Salesforce 之間切換的人。</p></div></div><nav class="toc" aria-label="本場內容導覽"><a href="#takeaways">重點</a><a href="#chapters">章節</a><a href="#concepts">實作與概念</a><a href="#workflow">操作流程</a><a href="#limits">限制</a><a href="#transcript">原始來源</a></nav></header><p class="g-small"><strong>用語先說清楚：</strong>本頁的「代理」是能代人使用工具、執行工作的 AI；「上下文」是它判斷事情時能讀到的背景資料。其他專門用語在下方詞彙區有白話解釋。</p><details class="g-note reveal"><summary>先看本場專門用語的白話解釋</summary><dl><dt><strong>pipeline</strong></dt><dd>銷售商機的集合與推進狀態；本場既談尋找新機會，也談更新客戶下一步，不是資料工程裡的處理管線。</dd><dt><strong>personal hooks</strong></dt><dd>與某位聯絡人本人有關的具體切入點，例如他在訪談中說過的目標，用來說明為何此時值得聯絡。</dd><dt><strong>intent data</strong></dt><dd>可協助判斷需求與聯絡優先序的意向訊號；本場舉公司成長、職缺等資料，但未給出完整評分公式。</dd><dt><strong>discovery call</strong></dt><dd>用來了解客戶需求、情境與下一步的探索通話；Echo 會利用這類通話留下的內容調整簡報。</dd><dt><strong>chief of staff</strong></dt><dd>此處指數位幕僚長 Bot，協助備會、處理日常事項，也可協調其他專職 Bot；不是必備的唯一入口。</dd><dt><strong>routines</strong></dt><dd>按照設定定期執行的例行任務，例如掃描收件匣；頻率會影響使用量與通知噪音，應依實際需求安排。</dd><dt><strong>MCP</strong></dt><dd>讓 Bot 連接外部工具、取用資料或功能的介面；本場建議有合適連接時優先使用，缺乏時才考慮畫面操作。</dd><dt><strong>computer use</strong></dt><dd>讓 Bot 像使用者一樣操作電腦畫面；可補足沒有合適工具介面的場景，本場將它與 MCP 的選用作比較。</dd></dl></details><div class="g-note g-boundary"><p><strong>怎麼對照影片：</strong>本頁時間戳全部是「完整回放檔案」的播放位置，不是台灣時鐘。整理範圍約 04:00:00–04:32:51。依完整回放語音，正式工作坊從 04:00:00 的歡迎與自我介紹開始，至約 04:32:51 的致謝結束，包含全部可辨識的現場與 X 問答及最後活動公告，並非議程標示的九十分鐘。前段遊戲工作室在 03:59:34 明確交棒；04:19:14 的『今天預定示範到此』不是結束，之後還有重點整理和約十一分鐘問答。結尾致謝的語音辨識時間延伸到休息段，故採有清楚收尾語句的位置；開場提及的現場動手操作，未在此段回放中呈現。議程署名為 SpaceXAI Sales Team，實際有兩位主要講者，本文不把所有發言硬歸給單一姓名。</p><p>講者姓名依整理時參考的議程；現場可能多人發言，本頁不把所有發言都歸給同一人。整理時參考本機語音辨識，專名仍可能有誤。公開版僅提供中文摘要與整理者圖解，不重製完整逐字稿或原始講座截圖。</p></div><div class="g-toolbar"><button class="g-button primary" id="preview-notes">預覽／複製本頁重點</button><a class="g-button" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer">開啟 X 完整回放</a></div><section id="takeaways"><div class="sec-head"><span class="idx">01</span><h2>先掌握這場的核心</h2></div><p class="sec-intro">先看重點，再依時間到原始回放核對。不是產品功能清單，而是這場實際展示的用法。</p><div class="g-grid"><article class="card"><h3>把研究要求改成可交付的銷售工作</h3><p>講者最初只要求研究，Bot 回傳了要她自己觀看的影片連結；她追問，改成要求 Bot 觀看影片並起草郵件。差別在於把資料搜尋延伸到可用產物，而不是多收一批連結。夜間跑開發名單、隔天審閱郵件，是她描述的實際工作方式，不等於全自動成交。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:16:23" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:16:23 ↗ 回放</a></article><article class="card"><h3>用個人發言建立聯絡理由</h3><p>PG Bot 從 Salesforce 選客戶與聯絡人，再找 X 貼文、訪談及網路研討會中的具體主張。講者認為只寫募資新聞太容易與其他開發信撞題，因此要求整理個人切入點、意向訊號和聯絡優先序，再用自己的寫作範例調整語氣；會議增加是她的經驗，沒有公布比較數據。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:09:40" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:09:40 ↗ 回放</a></article><article class="card"><h3>客戶脈絡要回到原本工作的地方</h3><p>示範不是另建一座取代所有系統的資料庫：Salesforce 接收下一步，Notion 保存客戶計畫，Slack 留在跨部門溝通流程中。Grok Bot 被定位成跨工具取資料與協調工作的入口；要先連接已有的資料來源，才能減少業務逐處尋找資訊的時間。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:24:30" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:24:30 ↗ 回放</a></article><article class="card"><h3>一個專職 Bot 不等於固定一套組織圖</h3><p>講者建議一個 Bot 專注一種工作，但每位客戶是否各建一個、是否由幕僚長統籌，仍依客戶數與個人偏好決定。一位講者偏好直接找專職 Bot、降低排程頻率；另一位偏好幕僚長與例行任務。團隊可先共享熟練使用者的範本，再讓新同事個人化。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:25:53" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:25:53 ↗ 回放</a></article><article class="card"><h3>保留審閱點，也把等待與成本算進流程</h3><p>郵件卡片可修改、寄出或丟棄，Salesforce 更新則先看過再推送。Echo 更新簡報也不是逐字即時串流：講者會先停止 Granola，再讓 Bot 取逐字稿，並預留約兩分鐘；Gong 較適合會後處理。排程太密及不必要的畫面操作，也可能增加使用量與通知噪音。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:31:06" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:31:06 ↗ 回放</a></article></div></section><section id="chapters"><div class="sec-head"><span class="idx">02</span><h2>沿著現場的順序看</h2></div><p class="sec-intro">點選章節可開啟 X 原始回放，請手動跳至標示時間；章節是依內容整理的閱讀段落，不是主辦方公布的精確分段。</p><div class="g-grid"><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:00:00"><small>04:00:00 — 04:05:34</small><h3>從聊天工具走向能接工作的團隊</h3><p>兩位市場推廣團隊講者介紹工作坊，從問答、單次任務談到整段工作委派。Bot 有自己的執行環境、可記住工作脈絡，也能分享範本。銷售應用包括開發商機、工程問題、會議簡報、幕僚長與預測；這裡是能力介紹，後面才進入個人工作流程示範。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:05:34"><small>04:05:34 — 04:08:56</small><h3>認識 Olive、Echo 與客戶專家</h3><p>講者介紹自己的 Bot 團隊：Olive 處理日常與備會，PG 負責開發，Echo 依會議內容更新簡報，客戶專家追蹤使用量、Slack 與功能需求。現場展示郵件卡片與例行掃描，也以示範筆記說明 Echo；簡報翻譯要求已送出，但本段沒有確認翻譯成品。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:08:56"><small>04:08:56 — 04:12:21</small><h3>PG：把客戶名單變成有理由的開發信</h3><p>從 Salesforce 取五個帳戶並挑選五位聯絡人，是講者採用的工作尺度。Bot 整理個人社群發言、公司成長與招聘等訊號，也能閱讀訪談找相關引文。產物是有排序的研究表和可編輯郵件；寄出前再參照自己的 Gmail、Slack 或 X 寫作風格。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:12:21"><small>04:12:21 — 04:14:24</small><h3>會後紀錄與重要客戶的持續經營</h3><p>Salesforce 的下一步更新由 Granola、Gong、郵件與 Slack 提供脈絡，格式包含姓名縮寫、日期、客戶成果及後續行動，審閱後才推送。另一條流程在通話後更新 Notion 客戶計畫，包含續約、關係人與專案，並找出前二十位重度使用者供團隊聯絡。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:14:24"><small>04:14:24 — 04:19:36</small><h3>工程答案與真正完成研究工作的 Bot</h3><p>工程 Bot 連接程式碼庫，協助準備可對客戶說明的雲端代理設定方式與案例資料。講者接著回顧一次研究要求只得到影片連結的經驗，說明如何改成交付郵件草稿；也提到夜間開發、差旅費用及學習用途。另一位講者補充，會中取得答案有助推進下一步。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:19:36"><small>04:19:36 — 04:23:30</small><h3>三項採用原則與使用量取捨</h3><p>重點整理是接上日常工具、讓每個 Bot 專注一種工作、善用例行排程。問答則把這些原則加上條件：有人誤設每十五分鐘執行，一位講者只跑每日一兩次並直接找專職 Bot；另一位偏好幕僚長統籌。能用 MCP 連接時優先使用，必要時才操作畫面。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:23:30"><small>04:23:30 — 04:27:19</small><h3>問答：知識庫、Cursor 與客戶分工</h3><p>知識管理的回答是連接公司既有來源，不必先把所有資料搬到單一地方；Grok Bot 作為跨工具的協調入口。要啟動 Cursor 雲端代理需先連接帳號。至於一客戶一個 Bot 或共用專家，兩位講者都認為取決於偏好與管理規模，少數重要客戶和數百個帳戶不必用同一配置。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:27:19"><small>04:27:19 — 04:30:40</small><h3>問答：從個人範本擴散到整個團隊</h3><p>市集或同事分享的範本可以再修改，也可分享自己做好的版本。跨部門溝通仍以 Slack 為主，Bot 協助追蹤頻道而非取代協作工具。團隊導入則從熟練使用者的配置出發，依業務或行銷角色分享不同的 Bot 組合，直接在 Grok Bot 中建立並交給新同事。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間" aria-label="開啟原始回放，請跳至 04:30:40"><small>04:30:40 — 04:32:51</small><h3>最後問答：Echo 的時間差與活動收尾</h3><p>觀眾追問 Echo 是否串流會議內容，講者說明實際做法是先停止 Granola，再執行 Echo 取逐字稿並更新投影片，約留兩分鐘。Gong 要等通話結束後載入，較適合下一次會議或會後寄送。最後公告分享 Bot 範本的 X 挑戰與 Starbase 觀賞機會，致謝後結束這段直播工作坊。</p></a></div></section><section id="concepts"><div class="sec-head"><span class="idx">03</span><h2>把概念接回真實示範</h2></div><p class="sec-intro">每個整理點都附原始回放的參考時間；示範結果不等於對所有情境的保證。</p><div class="g-grid"><article class="card g-concept"><h3>01 / 專職 Bot：用工作責任劃分，而不是什麼都塞進同一串聊天</h3><p>專職 Bot 的意思，是把特定工作需要的資料與規則集中給一位數位同事。工程問題、客戶開發和差旅各有不同輸入與產物，分開後比較容易說清楚要做什麼。講者用『一個 Bot、一項工作』描述原則，但沒有主張所有人必須建相同數量；是否另設幕僚長統籌，問答中明確保留個人選擇。</p><div class="g-example"><strong>現場例子</strong><p>講者的團隊包括處理日常的 Olive、開發聯絡人的 PG、更新會議簡報的 Echo，以及客戶專家與工程 Bot。Olive 以她的狗命名只是個人化方式；真正有用的分工是讓每一位接到相關資料、知道要交付郵件、客戶紀錄或工程答案。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:20:09" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:20:09 ↗ 回放</a></article><article class="card g-concept"><h3>02 / 個人切入點：找到對方真正說過、且與合作相關的事</h3><p>Personal hooks 是能連結到某個聯絡人的具體話題，不只是公司的產業分類或募資消息。PG 會整理主管的 X 發文、訪談和網路研討會，找出與產品價值有關的主張，再排聯絡優先序。講者偏好這種方式，因為一般公司新聞容易讓所有開發信長得一樣；這是她的使用經驗，不是證明某一資料平台必然更準。</p><div class="g-example"><strong>現場例子</strong><p>現場以技術長談軟體工廠、執行長談新產品為例，說明如何把個人發言放進研究表。表格也可帶入公司成長、職缺等意向訊號，再轉成 Gmail 草稿。講者另提供自己滿意的舊文，讓草稿接近本人語氣，而非套用通用的 AI 開場白。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:09:40" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:09:40 ↗ 回放</a></article><article class="card g-concept"><h3>03 / 人工審閱點：Bot 先整理，業務再決定是否寫回</h3><p>把會議內容搬進 Salesforce，不只是摘要一段文字，而是遵守團隊既有欄位與寫法。講者先提供姓名縮寫、日期、客戶成果和下一步的格式，讓 Bot 從郵件、Slack、Granola 與 Gong 找資料。關鍵是她描述了『先審閱、再推送』的順序，因此不能把這場示範說成所有客戶資料都無人看管地自動寫回。</p><div class="g-example"><strong>現場例子</strong><p>她先展示可修改、寄出或丟棄的郵件卡片，稍後展示 Salesforce 下一步更新。兩者共有的設計是先產出可處理的草稿，讓業務確認內容再做對外或系統寫入動作；現場沒有提供更新正確率，也沒有逐筆證明所有寫入都已完成。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:13:02" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:13:02 ↗ 回放</a></article><article class="card g-concept"><h3>04 / 客戶專家：把會議、使用訊號與續約工作連起來</h3><p>客戶專家不是只回答某家公司是誰，而是維持正在合作的脈絡：最近談了什麼、有哪些關係人、續約前要找誰，以及功能需求有沒有被滿足。示範把 Notion 當作客戶計畫的存放處，讓 Bot 在通話後補上資訊。這能減少來回尋找資料，但仍依賴已連接的來源與可取得的使用紀錄，不能憑空知道客戶狀態。</p><div class="g-example"><strong>現場例子</strong><p>講者要求列出前二十位重度使用者，好在續約前收集意見或邀請試新功能；她也提到，產品更新日誌發布後，Bot 可找出上個月曾提過相同需求的客戶，提醒業務主動通知。這些都是把既有訊號轉為具體聯絡行動的例子。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:13:43" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:13:43 ↗ 回放</a></article><article class="card g-concept"><h3>05 / 工程 Bot：在客戶通話中取回可用答案</h3><p>工程 Bot 連接程式碼庫，讓業務不必每次遇到設定問題都先結束對話、再向工程同事詢問。講者要求的是可直接對客戶說明的答案，而非只丟出程式碼片段；她也會要求其他客戶的導入成果。這裡示範了提問與答案用途，並不等於已驗證每項工程建議，或授權把所有內部資料直接提供給外部客戶。</p><div class="g-example"><strong>現場例子</strong><p>現場詢問如何設定雲端代理，並同時要求兩家客戶的成果資料。講者說明，過去可能要找工程師和不同客戶經理才能湊齊回答，現在 Bot 會整理成適合貼到 Slack 的版本。另一位講者補充，會中較快取得答案有助推動商機下一步。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:14:41" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:14:41 ↗ 回放</a></article><article class="card g-concept"><h3>06 / 委派到產物：不要把一堆連結當成工作完成</h3><p>聊天習慣容易讓要求停在『幫我研究』，得到的就只是摘要與來源。講者的修正是明確要求 Bot 讀完材料，再產生她要用的外聯郵件。這種委派包含對象、來源、用途與產物，也可以在既有成果上逐步擴張，例如再起草 LinkedIn 訊息。她提到每天多交一點工作，是個人練習方式，不是量化效率承諾。</p><div class="g-example"><strong>現場例子</strong><p>一次研究需求回來的是要講者自己觀看的研討會連結，她回覆不要只給連結，要 Bot 代為觀看並寫信。她也描述讓開發 Bot 夜間處理長名單、隔天早上備好郵件，或根據客戶執行長的訪談替自家執行長準備邀約訊息。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:16:37" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:16:37 ↗ 回放</a></article><article class="card g-concept"><h3>07 / MCP 與畫面操作：能直接連接時，不必繞一大圈</h3><p>MCP 在這裡可先理解為讓 Bot 連接工具並取用功能的介面；computer use 則是像人一樣操作畫面。講者在控制使用量的問答中建議，有合適 MCP 時先用它，缺乏好用連接才採畫面操作。她同時承認不少銷售工具的連接仍不理想，所以這是選擇次序，不是承諾所有系統都已有完整介面。</p><div class="g-example"><strong>現場例子</strong><p>講者提到 Gong、Granola、Salesforce 已有可用連接，建議把畫面操作留給必要場景。相同問答還談到把例行任務誤設成每十五分鐘執行的案例，以及直接詢問專職 Bot、減少幕僚長轉派的個人習慣；這些做法沒有附上固定節費百分比。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:22:56" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:22:56 ↗ 回放</a></article><article class="card g-concept"><h3>08 / Echo 的『會中更新』有觸發點，也有等待時間</h3><p>Echo 依需求探索通話中的內容更新簡報，但最後問答釐清它並非在示範逐字即時串流。講者會先完成大部分需求探索，停止 Granola，再執行 Echo 抓取逐字稿、修改投影片，並預留約兩分鐘。Gong 的會議資料通常還要等會後載入，因此她把兩種來源安排在不同時間點使用。</p><div class="g-example"><strong>現場例子</strong><p>觀眾問能否把逐字稿串流到 Echo，講者改以自己的實際操作回答：通話中停止 Granola、執行 Echo，稍等後再呈現更新。使用 Gong 時則較適合準備下次通話，或會後寄送簡報；本場沒有重新完整演示一次從錄音到投影片更新的即時流程。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:31:45" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:31:45 ↗ 回放</a></article><article class="card g-concept"><h3>09 / 範本分享：先複用成熟做法，再依角色個人化</h3><p>範本是可複用的 Bot 配置與工作做法，不代表每位同事的客戶與偏好都應相同。問答中，講者建議從熟練使用者已有的範本出發，在 Grok Bot 中建立後分享給新使用者，再按業務、行銷等角色調整。市場上的範本也能修改；本場談的是導入策略，沒有演示完整的企業管理後台部署。</p><div class="g-example"><strong>現場例子</strong><p>講者以業務新人先取得五個 Bot、行銷可能取得另一組五個為例，說明依角色提供起點。另一個問題談跨部門溝通，她仍使用 Slack，只讓 Bot 追蹤頻道與事件。兩段回答合在一起看，是讓既有協作更順手，而非要求全公司換掉原來的工具。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:28:01" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:28:01 ↗ 回放</a></article></div></section><section id="workflow"><div class="sec-head"><span class="idx">04</span><h2>從一份客戶名單到可審閱的開發郵件</h2></div><p class="sec-intro">整理者依本場 PG 示範與使用經驗歸納；不是現場逐步執行完全部流程的操作錄影，也不保證寄信後取得會議。</p><ol class="g-flow"><li class="card"><h3>先連接工作來源，提供自己的寫法</h3><p>讓專職 Bot 可取用 Salesforce 等既有資料，並提供自己滿意的 Gmail、Slack 或 X 寫作範例。目的不是只給一個產品名稱，而是讓後續研究知道資料在哪裡、產出的郵件該像誰說話。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:11:44" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:11:44 ↗ 回放</a></li><li class="card"><h3>指定帳戶與聯絡人範圍</h3><p>可從 Salesforce 的負責名單挑選，也可直接指定帳戶。講者採五個帳戶、再挑五位聯絡人的尺度，並參照意向訊號判斷適合度；這是她的設定，不是系統只能處理這個數量。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:09:16" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:09:16 ↗ 回放</a></li><li class="card"><h3>找與個人有關的實際發言</h3><p>請 Bot 整理主管的社群貼文、播客和網路研討會，找出能連到合作價值的引文或議題。產物是包含個人切入點、意向訊號與聯絡優先序的表格，而不是只列募資新聞或待觀看連結。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:10:36" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:10:36 ↗ 回放</a></li><li class="card"><h3>把研究轉成符合自己語氣的草稿</h3><p>明確要求 Bot 根據材料起草外聯郵件，放進 Gmail 或可編輯卡片，再依先前提供的寫作範例調整語氣。講者指出只要求研究可能只拿到連結，所以此步要說清楚真正需要的產物。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:11:32" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:11:32 ↗ 回放</a></li><li class="card"><h3>審閱後再寄出，逐步擴充委派範圍</h3><p>講者在寄出前關心內容是否像自己，並可編輯草稿；需要時再增加 LinkedIn 訊息或下一批聯絡人。她也會讓 Bot 夜間準備、早晨處理，重點是形成可反覆使用的工作方式，而非一次交出全部責任。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:16:52" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:16:52 ↗ 回放</a></li></ol></section><section id="limits"><div class="sec-head"><span class="idx">05</span><h2>哪些地方不能直接照單全收</h2></div><p class="sec-intro">分清楚現場示範、講者判斷與整理者提醒。</p><div class="g-grid"><article class="card"><h3>不要把使用經驗讀成效能或成交保證</h3><p>講者說工程 Bot 有助加快取得答案，PG 讓她約到更多高階買家會議，但沒有提供對照組、轉換率或成本帳單。開場提及的預測用途也沒有在本場完整展示；整理者不據此推算節省工時或營收成長。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:12:11" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:12:11 ↗ 回放</a></article><article class="card"><h3>示範資料與未完成結果要分開看</h3><p>原始回放中的三個示範畫面都可見示範資料標示：Olive 的收件人、PG 的名單與切入點、客戶專家的使用資料都不能當成真實客戶成果。PG 郵件明列尚未寄出，客戶專家也仍詢問是否把表格加入 Notion 計畫。Echo 的翻譯要求沒有確認成品，工程答案也未逐項獨立核實；講者的日常經驗與這次展示的資料須分開看。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:10:43" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:10:43 ↗ 回放</a></article><article class="card"><h3>排程與幕僚長不是越多越好</h3><p>兩位講者的偏好不同：一位每日跑一兩次例行任務，直接找專職 Bot；另一位偏好由幕僚長與排程推動工作。每十五分鐘執行的誤設案例說明頻率值得檢查，但本場沒有公布適用所有人的固定成本門檻。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:21:35" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:21:35 ↗ 回放</a></article><article class="card"><h3>Echo 需要可取用的會議資料與等待時間</h3><p>Granola 做法是先停止錄音、再執行 Echo，講者建議預留約兩分鐘；Gong 的資料通常等會後載入，較適合後續通話或會後寄送。不能把『會中更新』理解為毫無延遲的逐字串流，或任何錄音工具都能即時接入。</p><a class="g-time" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" aria-label="開啟原始回放，請跳至 04:31:06" target="_blank" rel="noopener noreferrer" title="開啟 X 原始回放後，請手動跳至所示時間">04:31:06 ↗ 回放</a></article><article class="card"><h3>整理者提醒：審閱與分享仍要有資料邊界</h3><p>本場有寄信前修改、Salesforce 更新前審閱的例子，但沒有詳述跨客戶隔離、企業權限或外發機密的完整政策。實際導入時應另行確認哪些資料可供 Bot 讀取、哪些成果能對外分享；這是整理者提醒，不是本場已完成的安全驗證。</p><span class="g-small">整理者提醒</span></article></div><div class="g-note"><strong>辨識與來源限制：</strong>英文原稿是自動辨識，專名與少數語句仍需對照影音；直播原有的休息與中斷沒有補造內容。這是中文重點整理，不是逐句中文翻譯。<details class="reveal"><summary>查看專名疑點與整理核對紀錄</summary><ul><li>自動辨識把 Grok Bot 寫成 Rockbot、GraphBot 等變體，中文依本案名稱統一；原話請以原始回放核對。</li><li>語音辨識將一位講者姓名寫成 Krista Letts，畫面帳號與郵件署名則顯示 Krista Letz；另一位自介被辨識為 Mark Wright，拼法未獨立確認。本頁仍採議程團隊署名與『講者』稱呼。</li><li>簡報翻譯的目標語言被辨識成『dot com』，原文不清；本文僅保留有提出翻譯要求，不猜語言，也不宣稱已完成。</li><li>工程示範中的客戶名被辨識為 Amplitude 與 FAIR，第二個名稱拼法不確定，正文不把它當作已核實的客戶案例。</li><li>第一個使用量問答的提問沒有清楚辨識，本文依後續完整回答整理，不補造觀眾問題；問答與結尾的短致謝有時間拖長，時間戳適合定位而非逐字精密對齊。</li></ul></details><p class="g-small">頁面樣式已內嵌，範本的 Tailwind CDN 與 X 回放連結需要網路。</p></div></section><section id="transcript"><div class="sec-head"><span class="idx">06</span><h2>原始來源與公開範圍</h2></div><div class="g-note"><p>本頁僅公開中文編輯摘要與整理者自製圖解，不再散布完整逐字稿或原始講座截圖。講者原話與示範畫面請至原發布者的 X 回放觀看。</p><p>各章節與重點保留參考時間；連結會開啟完整回放，請手動跳至所示位置，並以原始影音為準。</p><a class="g-button" href="https://x.com/i/broadcasts/1PKqrNyvmYwGb" target="_blank" rel="noopener noreferrer">觀看 X 原始回放</a></div></section><div class="g-topnav"><a href="grok-bot-sales-engineering.html">Grok Bot for Sales Engineering</a><a href="grok-bot-sdrs.html">Grok Bot for SDRs</a><a href="grok-bot-customer-support.html">Grok Bot for Customer Support</a></div><footer class="foot"><div>來源：Grok Bot Galaxy Day 2 原始回放 · 2026/09/16–17<br>中文編輯摘要與自製圖解；不重製完整逐字稿及原始講座截圖。</div><a href="../../index.html#collection">回到知識書庫</a><a href="../index.html#day2">Grok Galaxy 活動總覽</a><div>視覺化工具：<a href="https://github.com/chenjackle45/html-visualizer" target="_blank" rel="noopener noreferrer">html-visualizer</a><br>錄影排程工作流程參考：<a href="https://github.com/shuotao/au2026" target="_blank" rel="noopener noreferrer">au2026</a>（工具署名不代表原始內容的再散布授權）。</div></footer></main><dialog id="export-dialog" class="g-dialog"><h2>本頁重點與評論</h2><textarea id="export-text" aria-label="待複製的本頁重點"></textarea><p id="export-status" aria-live="polite"></p><div class="g-toolbar"><button id="copy-export" class="g-button primary">確認複製</button><button id="close-export" class="g-button">關閉</button></div></dialog><script id="summary-data" type="application/json">"Grok Bot for Sales｜把銷售工作交給專職 Bot：從找客戶、備會到更新商機\n\n本場把銷售助理拆成一組專職 Bot：找對聯絡人、讀懂客戶發言、準備郵件與簡報，再把會議內容回寫到客戶紀錄。關鍵不是多問幾個問題，而是接上既有工具、交付明確產物，並保留寄信與更新資料前的人工審閱；自動排程與分工方式則須依成本和工作習慣調整。\n\n把研究要求改成可交付的銷售工作\n講者最初只要求研究，Bot 回傳了要她自己觀看的影片連結；她追問，改成要求 Bot 觀看影片並起草郵件。差別在於把資料搜尋延伸到可用產物，而不是多收一批連結。夜間跑開發名單、隔天審閱郵件，是她描述的實際工作方式，不等於全自動成交。 [04:16:23]\n\n用個人發言建立聯絡理由\nPG Bot 從 Salesforce 選客戶與聯絡人，再找 X 貼文、訪談及網路研討會中的具體主張。講者認為只寫募資新聞太容易與其他開發信撞題，因此要求整理個人切入點、意向訊號和聯絡優先序，再用自己的寫作範例調整語氣；會議增加是她的經驗，沒有公布比較數據。 [04:09:40]\n\n客戶脈絡要回到原本工作的地方\n示範不是另建一座取代所有系統的資料庫：Salesforce 接收下一步，Notion 保存客戶計畫，Slack 留在跨部門溝通流程中。Grok Bot 被定位成跨工具取資料與協調工作的入口；要先連接已有的資料來源，才能減少業務逐處尋找資訊的時間。 [04:24:30]\n\n一個專職 Bot 不等於固定一套組織圖\n講者建議一個 Bot 專注一種工作，但每位客戶是否各建一個、是否由幕僚長統籌，仍依客戶數與個人偏好決定。一位講者偏好直接找專職 Bot、降低排程頻率；另一位偏好幕僚長與例行任務。團隊可先共享熟練使用者的範本，再讓新同事個人化。 [04:25:53]\n\n保留審閱點，也把等待與成本算進流程\n郵件卡片可修改、寄出或丟棄，Salesforce 更新則先看過再推送。Echo 更新簡報也不是逐字即時串流：講者會先停止 Granola，再讓 Bot 取逐字稿，並預留約兩分鐘；Gong 較適合會後處理。排程太密及不必要的畫面操作，也可能增加使用量與通知噪音。 [04:31:06]\n\n來源：https://x.com/i/broadcasts/1PKqrNyvmYwGb\n時間戳為完整回放播放位置。"</script><style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea id="vt-popup-textarea" placeholder="對這段文字的評論 / 疑問 / 補充..."></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Grok Galaxy", id: "local", project: "grok-galaxy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script></body>
+</html>
