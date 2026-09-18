@@ -1,0 +1,31 @@
+/* A single reading column for the three chronological studio logs. */
+main.wrap {
+  width: min(94vw, 1000px);
+  margin-inline: auto;
+  padding-inline: clamp(10px, 2vw, 28px);
+}
+main.wrap .g-hero {
+  grid-template-columns: minmax(0, 1fr);
+}
+main.wrap .studio-entry,
+main.wrap .d3-entry,
+main.wrap .body-text,
+main.wrap p,
+main.wrap .g-note li {
+  max-width: none;
+}
+main.wrap .studio-entry > p,
+main.wrap .d3-entry > p {
+  max-width: none;
+  line-height: 1.95;
+}
+main.wrap .sec-intro {
+  max-width: none;
+  margin-left: 0;
+}
+@media print {
+  main.wrap {
+    width: 100%;
+    padding-inline: 0;
+  }
+}

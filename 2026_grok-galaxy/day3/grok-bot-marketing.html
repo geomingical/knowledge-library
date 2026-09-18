@@ -1,0 +1,1022 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head><meta name="html-visualizer-mode" content="teaching-companion">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>行銷實作：界定代理職責，再持續給回饋｜第三天學習筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, 1760px);
+        margin: 0 auto;
+        padding: 0 32px 140px;
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: 80px 0 56px;
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: clamp(38px, 5.4vw, 62px);
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 8px;
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      h1 em {
+        font-style: italic;
+        color: var(--clay);
+      }
+      .intro {
+        font-size: 16.5px;
+        color: var(--g700);
+        margin: 22px 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 26px 0 0;
+      }
+      nav.toc a {
+        font-size: 12.5px;
+        padding: 7px 14px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: 72px;
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 10px;
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: 13px;
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 27px;
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        background: var(--g100);
+        padding: 2px 8px;
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: 14.5px;
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 24px 50px;
+      }
+      @media (max-width: 640px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: 24px;
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: 16px;
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: 18px 20px 16px;
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: 19px;
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: 7px;
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: 13.5px;
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: 11px;
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: 11.5px;
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: 100px;
+        border-top: 1.5px solid var(--g300);
+        padding-top: 36px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: 15px;
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script><style>
+html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-underline-offset:4px}button,input{font:inherit}button,a,summary{touch-action:manipulation}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}button{cursor:pointer}h1{max-width:23ch;overflow-wrap:anywhere}h2,h3{overflow-wrap:anywhere}h3{font-size:21px;font-weight:650;margin:0 0 12px}p{margin:0 0 14px;max-width:72ch}.wrap{padding:0 24px 70px}header.masthead{padding:28px 0 40px}.g-back{display:inline-block;margin:20px 0}.g-hero{display:grid;grid-template-columns:1.2fr 1fr;gap:38px;align-items:center}.g-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.g-three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}.g-grid>*,.g-hero>*,.g-three>*{min-width:0}.g-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}.g-meta span{background:var(--g100);padding:5px 12px;border-radius:6px;font-size:13px;color:var(--g700)}.g-lead{font-size:20px;color:var(--g700);max-width:60ch}.g-note{background:var(--g100);border-left:3px solid var(--clay);padding:18px 22px;border-radius:0 8px 8px 0;margin-top:22px;font-size:14px;color:var(--g700)}.g-time{font:13px var(--mono);white-space:nowrap;display:inline-block;border-bottom:1px solid var(--oat);text-decoration:none;margin:6px 0}.g-cite{margin-top:16px}.g-figure{margin:0}.g-figure img{display:block;width:100%;aspect-ratio:16/9;object-fit:contain;border:1px solid var(--g300);border-radius:12px;background:var(--slate)}.g-figure figcaption{font-size:13px;color:var(--g700);margin-top:10px}.g-chapter{display:block;text-decoration:none;color:inherit;transition:border-color .15s}.g-chapter:hover{border-color:var(--clay)}.g-chapter small{font:12px var(--mono);color:var(--clay-d)}.g-chapter h3{margin:10px 0}.g-concept{margin-top:22px}.g-concept .g-example{background:var(--g100);padding:18px;border-radius:8px;margin-top:16px}.g-concept blockquote{border-left:3px solid var(--oat);margin:16px 0 0;padding:10px 16px;color:var(--g700);font-size:15px;overflow-wrap:anywhere}.g-flow{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;counter-reset:step}.g-flow li{counter-increment:step;position:relative;padding:24px 24px 24px 65px;background:var(--paper);border:1.5px solid var(--g300);border-radius:12px;min-width:0}.g-flow li:before{content:counter(step,decimal-leading-zero);position:absolute;left:20px;top:24px;font:18px var(--mono);color:var(--clay-d)}.g-term dt{font-weight:700;margin-bottom:8px}.g-term dd{margin:0;color:var(--g700)}.g-term{margin:0}.g-toolbar{display:flex;flex-wrap:wrap;gap:12px;margin:20px 0}.g-button{border:1px solid var(--g300);border-radius:8px;padding:10px 16px;background:var(--paper);color:var(--slate);text-decoration:none;font-size:14px;display:inline-block}.g-button.primary{background:var(--slate);color:var(--ivory);border-color:var(--slate)}.g-search{width:100%;padding:13px 16px;border:1.5px solid var(--g300);border-radius:8px;background:var(--paper);color:var(--slate)}.g-transcript{margin-top:14px;border:1px solid var(--g300);border-radius:10px;background:var(--paper)}.g-transcript summary{padding:16px 20px;cursor:pointer;font-weight:650}.g-transcript-body{padding:0 20px 20px}.g-line{display:grid;grid-template-columns:90px minmax(0,1fr);gap:16px;border-top:1px solid var(--g200);padding:14px 0;scroll-margin-top:30px}.g-line:target{background:var(--clay-soft)}.g-line p{margin:0;overflow-wrap:anywhere;font-size:15px;line-height:1.7}.g-line time{font:12px var(--mono);color:var(--clay-d);padding-top:4px}.g-line[hidden],.g-transcript[hidden]{display:none}.g-small{font-size:13px;color:var(--g700)}.g-status{min-height:26px;margin:10px 0;color:var(--g700);font-size:14px}.g-dialog{max-width:750px;width:92vw;border:1px solid var(--g300);border-radius:14px;padding:26px;background:var(--ivory);color:var(--slate)}.g-dialog::backdrop{background:rgba(20,20,19,.6)}.g-dialog textarea{width:100%;height:45vh;resize:vertical;padding:15px;border:1px solid var(--g300);border-radius:8px;font:14px/1.7 var(--sans);color:var(--slate);background:var(--paper)}.g-topnav{display:flex;gap:16px;flex-wrap:wrap;margin-top:28px}.g-topnav a{font-size:14px}.vt-comment-list{max-width:calc(100vw - 32px)}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-session-badge{border-radius:6px;letter-spacing:0}.sec-head{align-items:flex-start}.sec-head h2{line-height:1.35}.g-gallery{margin-top:24px}.g-boundary p:last-child{margin-bottom:0}
+.g-hero h2{font-size:23px;font-weight:650;line-height:1.45;margin:18px 0}.g-note details{margin-top:12px}.g-note summary{cursor:pointer;font-weight:650}.g-note li{max-width:72ch;margin:10px 0}.g-note ul{padding-left:24px}
+.g-figure img{height:auto}
+@media(max-width:800px){.g-hero,.g-three{grid-template-columns:1fr}.g-grid,.g-flow{grid-template-columns:1fr}.g-hero{gap:22px}.wrap{padding:0 10px 70px}header.masthead{padding-top:16px}h1{font-size:38px;line-height:1.15}.g-lead{font-size:18px}section{margin-top:48px}.card{padding:20px}.g-line{grid-template-columns:1fr;gap:6px}.g-flow li{padding-right:18px}.sec-head{gap:10px}.sec-head h2{font-size:25px}.g-meta span{font-size:12px}.g-toolbar>*{max-width:100%}}
+@media print{.g-toolbar,.g-topnav,.vt-comment-trigger,.vt-comment-pill,.g-dialog{display:none!important}.wrap{width:100%;padding:0}.card,.g-figure{break-inside:avoid}h1{font-size:36px}.g-transcript{display:none}}
+</style></head><body><main class="wrap"><nav aria-label="書庫與活動導覽"><a class="g-back" href="../../index.html#collection">← 回到知識書庫</a> · <a href="../index.html#day3">Grok Galaxy 第三天</a></nav><p class="g-small"><a href="studio-build-log.html#lecture-grok-bot-marketing">沿時間軸看這場前後的主持人會談 →</a></p><header class="masthead"><div class="eyebrow">DAY 3 / 2026.09.17（舊金山） / 講題學習筆記</div><div class="g-hero"><div><h1>Grok Bot for Marketing</h1><h2>行銷實作：界定代理職責，再持續給回饋</h2><p class="g-lead">本場以虛構航空品牌 Xair 示範如何把市場研究、產品定位、網站與廣告工作分給不同代理，再用專案經理協調交接。重點是清楚的職責、持續回饋與有限授權。新的廣告活動並未在現場啟用；成效分析使用的是既有活動資料。</p><div class="g-meta"><span>繁體中文公開整理</span><span>依教學順序收斂重點</span></div><p class="g-small">Josh Kim；講者在 06:00:44 自我介紹。</p><p class="g-small">行銷經理、數位行銷人員、自動化流程設計者以及希望建立 AI 代理人團隊的企業管理者。</p></div></div><nav class="toc" aria-label="本場內容導覽"><a href="#takeaways">重點</a><a href="#chapters">章節</a><a href="#concepts">實作與概念</a><a href="#workflow">操作流程</a><a href="#qa">現場問答</a><a href="#limits">限制與來源</a></nav></header><p class="g-small"><strong>用語先說清楚：</strong>「代理」是能使用工具、代人執行工作的 AI；「上下文」是它能讀到的背景資料。</p><details class="g-note reveal"><summary>先看本場專門用語的白話解釋</summary><dl><dt><strong>Thought partner (思考夥伴)</strong></dt><dd>指使用者透過對話與 AI 討論策略或修改文案，將其作為思考與靈感的輔助工具。</dd><dt><strong>Asynchronous (非同步)</strong></dt><dd>指工作流程不需要人類與 AI 同時在線，機器人可以獨立完成任務並在稍後回報結果。</dd><dt><strong>MCP (模型上下文協定)</strong></dt><dd>一種讓 AI 工具能與外部數據或工具進行標準化溝通的技術。</dd><dt><strong>Landing Page (落地頁面)</strong></dt><dd>使用者點擊廣告或連結後會跳轉到的特定網頁。</dd><dt><strong>Orchestration (編排)</strong></dt><dd>指自動化系統中，協調多個機器人或程序如何協作、交接任務的自動化流程。</dd><dt><strong>Context Switching (情境切換)</strong></dt><dd>指在處理不同任務或資訊之間轉換時，大腦所需重新適應與重新聚焦的過程。</dd><dt><strong>Pull Request (PR)</strong></dt><dd>在程式碼管理中，開發者請求將自己的程式碼變更合併到主程式碼庫的程序。</dd></dl></details><div class="g-note g-boundary"><p><strong>怎麼對照影片：</strong>整理範圍約 06:00:40–06:43:09，時間是完整回放的播放位置。點官方回放後請手動快轉，不是自動跳至該秒數。台灣觀看日期跨 9 月 17 日深夜至 18 日上午。</p><p>整理範圍包含現場教學與問答，至講者表示回到工作室為止。</p></div><div class="g-toolbar"><button class="g-button primary" id="preview-notes">預覽／複製本頁筆記</button><a class="g-button" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">開啟官方完整回放</a></div><section id="takeaways"><div class="sec-head"><span class="idx">01</span><h2>先掌握這場的核心</h2></div><p class="sec-intro">先看重點，再依章節回到現場脈絡；不是逐句翻譯。</p><div class="g-grid"><article class="card"><h3>從思考夥伴轉向功能部門</h3><p>Grok Bot 不僅是對話工具，而是能組建功能部門的 AI 隊友。使用者可以為不同職能建立獨立機器人，讓它們在背景進行非同步協作，實現真正的業務流程自動化。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:00:40 ↗ 官方回放</a></article><article class="card"><h3>自主操作與工具串接能力</h3><p>機器人擁有自己的電腦與瀏覽器，能透過 MCP 與 API 串接外部工具，甚至能像真人一樣操作電腦、撰寫程式碼並將網站推送到正式環境執行任務。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:03:42 ↗ 官方回放</a></article><article class="card"><h3>降低情境切換的隱形成本</h3><p>透過引入「專案經理」機器人作為唯一的聯絡窗口，可以有效減少人類在不同角色間切換思考模式的負擔，讓使用者專注於高槓桿效益的核心決策。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:24:50 ↗ 官方回放</a></article></div></section><section id="chapters"><div class="sec-head"><span class="idx">02</span><h2>沿著現場的順序看</h2></div><p class="sec-intro">依實際內容分組；點選可開啟官方回放，再依所列時間定位。</p><div class="g-grid"><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:00:40 — 06:06:44</small><h3>AI 代理人的新範式：從對話到委派</h3><p>介紹 Grok Bot 如何超越傳統的思考夥伴或副駕駛模式，透過建立獨立的機器人隊友，實現非同步的工作流程與跨機器人的協作。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:06:44 — 06:15:48</small><h3>實作案例：Xair 航空公司行銷活動編排</h3><p>以 Xair 航空品牌為例，先讓研究代理了解產品與競爭對手，再把資料交給產品行銷代理撰寫定位文件；人類可直接在文件中留言要求調整。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:15:48 — 06:21:50</small><h3>自動化執行：從廣告框架到落地頁發布</h3><p>展示廣告活動架構與落地頁的並行建置。網站代理建立程式碼變更並回報進度；新的廣告仍需預算及信用卡等設定，沒有在此啟用。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:21:50 — 06:24:50</small><h3>數據驅動與流程優化</h3><p>分析代理讀取既有 Google Ads 活動，整理支出、點擊率與轉換率，再提出訊息及素材調整建議。不是拿剛建立的新活動假裝已有成效數據。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:24:50 — 06:37:00</small><h3>建立高效能機器人團隊的策略</h3><p>引入專案經理角色以減少情境切換成本，並強調正確定義職責範圍與持續投入回饋的重要性。</p></a><a class="card g-chapter" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer"><small>06:37:00 — 06:43:09</small><h3>個性化整合與企業安全機制</h3><p>探討如何透過設定上下文與開發工具實現個性化，以及企業在數據隱私與安全性方面的防護措施。</p></a></div></section><section id="concepts"><div class="sec-head"><span class="idx">03</span><h2>把概念接回真實示範</h2></div><p class="sec-intro">保留代表性操作與可確認結果；不把講者主張當成普遍保證。</p><div class="g-grid"><article class="card g-concept"><h3>01 / 機器人團隊的編排與協作</h3><p>使用者不再是與單一聊天機器人對話，而是建立一群具備不同職能的機器人團隊。透過非同步（Asynchronous）的工作流程，機器人可以在背景平行處理任務，並在不同角色間進行資訊交接。</p><div class="g-example"><strong>現場例子</strong><p>在 Xair 活動中，市場研究員完成競爭對手分析後，將結果交接給產品行銷員，後者根據分析內容撰寫定位簡報，實現跨角色的自動化流轉。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:09:47 ↗ 官方回放</a></article><article class="card g-concept"><h3>02 / 自主操作電腦的範式轉移</h3><p>機器人不僅能透過 API 溝通，還擁有自己的電腦與瀏覽器。這讓它們能像真人一樣操作各種數位工具，執行高度客製化的任務，如管理廣告平台或修改網站程式碼。</p><div class="g-example"><strong>現場例子</strong><p>網站營運代理依最新定位文件準備落地頁修改，透過 Cursor 建立 PR 並傳回截圖。流程中仍需要催促發布，稍後代理回報網站已上線並提供網址；這不表示新廣告活動也已開始投放。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:03:42 ↗ 官方回放</a></article><article class="card g-concept"><h3>03 / 降低情境切換成本的專案管理</h3><p>情境切換（Context Switching）是指在不同任務間轉換時產生的認知負荷。透過設定專案經理機器人作為唯一的聯絡窗口，可以減少人類需要監督多個機器人的壓力。</p><div class="g-example"><strong>現場例子</strong><p>使用者只需與專案經理對話，由其負責向其他專家機器人下令、收集進度並發送截圖，讓使用者能抽離瑣碎細節進行核心決策。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:24:50 ↗ 官方回放</a></article><article class="card g-concept"><h3>04 / 用既有活動資料形成下一輪建議</h3><p>分析代理讀取廣告平台資料，整理不同文案的支出、點擊率（CTR）與轉換率（CVR），並提出更新訊息及其他素材的建議。建議能作為討論起點，不代表應立即自動調整所有投放。</p><div class="g-example"><strong>現場例子</strong><p>講者沒有啟用新的廣告，而是改用本週既有活動示範分析；代理透過 Google Ads API 取回資料，提供精簡摘要與策略建議。</p></div><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:21:50 ↗ 官方回放</a></article></div></section><section id="workflow"><div class="sec-head"><span class="idx">04</span><h2>建立高效能 AI 行銷團隊的操作流程</h2></div><p class="sec-intro">依現場的任務交接整理成可借用的工作法；不代表所有新活動都已完成部署或正式投放。</p><ol class="g-flow"><li class="card"><h3>定義職責範圍 (Scoping)</h3><p>將機器人視為新進隊友，明確界定其職責範圍（Swim lanes）與角色責任，確保其專業化。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:27:51 ↗ 官方回放</a></li><li class="card"><h3>啟動研究與分析</h3><p>啟動市場研究機器人，透過爬取網站與搜尋競爭對手，識別市場缺口與機會。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:06:44 ↗ 官方回放</a></li><li class="card"><h3>策略規劃與內容產出</h3><p>將研究結果交接給產品行銷員，撰寫定位簡報，並根據使用者在文件中的評論進行迭代更新。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:09:47 ↗ 官方回放</a></li><li class="card"><h3>並行準備，再確認發布條件</h3><p>讓廣告代理準備活動架構，網站代理建立落地頁變更並回報進度。正式投放前仍須確認預算、帳戶設定與核准範圍；本場未啟用新的廣告活動。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:15:48 ↗ 官方回放</a></li><li class="card"><h3>數據回饋與持續投資</h3><p>利用分析師提取數據進行成效評估，並透過持續提供回饋與背景資訊來提升機器人的能力。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:21:50 ↗ 官方回放</a></li></ol></section><section id="qa"><div class="sec-head"><span class="idx">05</span><h2>現場問答，補上使用邊界</h2></div><p class="sec-intro">問題與回應經濃縮，不是逐字引述。</p><div class="g-grid"><article class="card"><h3>是否有任何領域是你不會允許它們自主執行的？你會建議我完全自動化嗎？</h3><p>建議將機器人視為隊友，從簡單任務與有限權限開始。隨著你提供更多提示與回饋，讓其符合你的風格，再逐步擴大權限。目標是建立豐富的記憶與上下文，最終處理複雜任務，但務必從小規模且低風險的任務開始。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:30:57 ↗ 官方回放</a></article><article class="card"><h3>你認為行銷人員在使用這項技術時最大的障礙是什麼？</h3><p>最大的障礙是使用者可能不清楚產品實際的能力。如果只是將其當作另一個大型語言模型（LLM）來提問，就無法發揮價值；必須將其視為可以交付任務、處理聯絡人等實際工作的工具。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:33:59 ↗ 官方回放</a></article><article class="card"><h3>如何確保公司的情報不會外洩，或資訊不會被用於模型訓練？</h3><p>我們提供數據隱私模式，使用者可以選擇加入或退出（opt in or out），以決定是否允許數據用於訓練。對於實際的安全需求，我們有專門團隊根據個案情況進行溝通與處理。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:40:02 ↗ 官方回放</a></article><article class="card"><h3>有沒有辦法將 Grok Bot 連接到 Grok CLI 以及我們在 Grok 網站上的資訊？</h3><p>你可以讓 Grok Bot 指向你現有的工作，將其視為工作的框架（Harness），這樣就能整合上下文。此外，你可以透過自己的電腦將 Grok Bot 直接與 Grok CLI 連接。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:37:00 ↗ 官方回放</a></article></div></section><section id="limits"><div class="sec-head"><span class="idx">06</span><h2>哪些地方不能直接照單全收</h2></div><p class="sec-intro">分清楚現場示範、講者判斷與整理者提醒。</p><div class="g-grid"><article class="card"><h3>網站上線不等於廣告已投放</h3><p>現場先展示建置中的落地頁，稍後由代理回報網站已發布；新的廣告活動則仍未啟用。成效分析用的是既有活動資料，不能把整場示範概括成所有素材都已上線。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:21:50 ↗ 官方回放</a></article><article class="card"><h3>數據隱私與安全</h3><p>輸入資訊的安全性需根據個案情況處理，並建議透過隱私模式進行管理。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:40:02 ↗ 官方回放</a></article><article class="card"><h3>自動化導入的風險</h3><p>不應立刻交出所有權限，應從低風險的小型任務開始逐步擴大權限。</p><a class="g-time" href="https://x.com/i/broadcasts/1YGNrbXEeazGw" target="_blank" rel="noopener noreferrer">原片 06:30:57 ↗ 官方回放</a></article></div><div class="g-note"><p>本站僅公開中文編輯整理，不提供完整逐字稿、原始演講畫面或錄影下載。原始內容權利屬於各自作者；請至官方回放觀看。</p><p>由本機語音辨識與 Gemma 輔助整理，再做來源抽查及專名修正；仍可能有辨識誤差，產品狀態以原片當時為準。完整細節請回看官方錄影。沒有補造原始直播未錄到的段落。</p></div></section><div class="g-topnav"><a href="studio-build-log.html">第三天主持人會談</a> · <a href="../index.html#day3">第三天所有講題</a></div><footer class="foot"><span>知識書庫 · Grok Galaxy Day 3</span><a href="../index.html#credits">來源與致謝</a><a href="../../index.html#collection">回到知識書庫</a></footer></main><dialog id="export-dialog" class="g-dialog"><h2>本頁中文筆記與評論</h2><textarea id="export-text" aria-label="待複製的本頁筆記"></textarea><p id="export-status" aria-live="polite"></p><div class="g-toolbar"><button id="copy-export" class="g-button primary">確認複製</button><button id="close-export" class="g-button">關閉</button></div></dialog><script id="summary-data" type="application/json">"← 回到知識書庫\n·\nGrok Galaxy 第三天\n沿時間軸看這場前後的主持人會談 →\nDAY 3 / 2026.09.17（舊金山） / 講題學習筆記\nGrok Bot for Marketing\n行銷實作：界定代理職責，再持續給回饋\n本場以虛構航空品牌 Xair 示範如何把市場研究、產品定位、網站與廣告工作分給不同代理，再用專案經理協調交接。重點是清楚的職責、持續回饋與有限授權。新的廣告活動並未在現場啟用；成效分析使用的是既有活動資料。\n繁體中文公開整理\n依教學順序收斂重點\nJosh Kim；講者在 06:00:44 自我介紹。\n行銷經理、數位行銷人員、自動化流程設計者以及希望建立 AI 代理人團隊的企業管理者。\n重點\n章節\n實作與概念\n操作流程\n現場問答\n限制與來源\n用語先說清楚：\n「代理」是能使用工具、代人執行工作的 AI；「上下文」是它能讀到的背景資料。\n先看本場專門用語的白話解釋\nThought partner (思考夥伴)\n指使用者透過對話與 AI 討論策略或修改文案，將其作為思考與靈感的輔助工具。\nAsynchronous (非同步)\n指工作流程不需要人類與 AI 同時在線，機器人可以獨立完成任務並在稍後回報結果。\nMCP (模型上下文協定)\n一種讓 AI 工具能與外部數據或工具進行標準化溝通的技術。\nLanding Page (落地頁面)\n使用者點擊廣告或連結後會跳轉到的特定網頁。\nOrchestration (編排)\n指自動化系統中，協調多個機器人或程序如何協作、交接任務的自動化流程。\nContext Switching (情境切換)\n指在處理不同任務或資訊之間轉換時，大腦所需重新適應與重新聚焦的過程。\nPull Request (PR)\n在程式碼管理中，開發者請求將自己的程式碼變更合併到主程式碼庫的程序。\n怎麼對照影片：\n整理範圍約 06:00:40–06:43:09，時間是完整回放的播放位置。點官方回放後請手動快轉，不是自動跳至該秒數。台灣觀看日期跨 9 月 17 日深夜至 18 日上午。\n整理範圍包含現場教學與問答，至講者表示回到工作室為止。\n預覽／複製本頁筆記\n開啟官方完整回放\n01\n先掌握這場的核心\n先看重點，再依章節回到現場脈絡；不是逐句翻譯。\n從思考夥伴轉向功能部門\nGrok Bot 不僅是對話工具，而是能組建功能部門的 AI 隊友。使用者可以為不同職能建立獨立機器人，讓它們在背景進行非同步協作，實現真正的業務流程自動化。\n原片 06:00:40 ↗ 官方回放\n自主操作與工具串接能力\n機器人擁有自己的電腦與瀏覽器，能透過 MCP 與 API 串接外部工具，甚至能像真人一樣操作電腦、撰寫程式碼並將網站推送到正式環境執行任務。\n原片 06:03:42 ↗ 官方回放\n降低情境切換的隱形成本\n透過引入「專案經理」機器人作為唯一的聯絡窗口，可以有效減少人類在不同角色間切換思考模式的負擔，讓使用者專注於高槓桿效益的核心決策。\n原片 06:24:50 ↗ 官方回放\n02\n沿著現場的順序看\n依實際內容分組；點選可開啟官方回放，再依所列時間定位。\n06:00:40 — 06:06:44\nAI 代理人的新範式：從對話到委派\n介紹 Grok Bot 如何超越傳統的思考夥伴或副駕駛模式，透過建立獨立的機器人隊友，實現非同步的工作流程與跨機器人的協作。\n06:06:44 — 06:15:48\n實作案例：Xair 航空公司行銷活動編排\n以 Xair 航空品牌為例，先讓研究代理了解產品與競爭對手，再把資料交給產品行銷代理撰寫定位文件；人類可直接在文件中留言要求調整。\n06:15:48 — 06:21:50\n自動化執行：從廣告框架到落地頁發布\n展示廣告活動架構與落地頁的並行建置。網站代理建立程式碼變更並回報進度；新的廣告仍需預算及信用卡等設定，沒有在此啟用。\n06:21:50 — 06:24:50\n數據驅動與流程優化\n分析代理讀取既有 Google Ads 活動，整理支出、點擊率與轉換率，再提出訊息及素材調整建議。不是拿剛建立的新活動假裝已有成效數據。\n06:24:50 — 06:37:00\n建立高效能機器人團隊的策略\n引入專案經理角色以減少情境切換成本，並強調正確定義職責範圍與持續投入回饋的重要性。\n06:37:00 — 06:43:09\n個性化整合與企業安全機制\n探討如何透過設定上下文與開發工具實現個性化，以及企業在數據隱私與安全性方面的防護措施。\n03\n把概念接回真實示範\n保留代表性操作與可確認結果；不把講者主張當成普遍保證。\n01 / 機器人團隊的編排與協作\n使用者不再是與單一聊天機器人對話，而是建立一群具備不同職能的機器人團隊。透過非同步（Asynchronous）的工作流程，機器人可以在背景平行處理任務，並在不同角色間進行資訊交接。\n現場例子\n在 Xair 活動中，市場研究員完成競爭對手分析後，將結果交接給產品行銷員，後者根據分析內容撰寫定位簡報，實現跨角色的自動化流轉。\n原片 06:09:47 ↗ 官方回放\n02 / 自主操作電腦的範式轉移\n機器人不僅能透過 API 溝通，還擁有自己的電腦與瀏覽器。這讓它們能像真人一樣操作各種數位工具，執行高度客製化的任務，如管理廣告平台或修改網站程式碼。\n現場例子\n網站營運代理依最新定位文件準備落地頁修改，透過 Cursor 建立 PR 並傳回截圖。流程中仍需要催促發布，稍後代理回報網站已上線並提供網址；這不表示新廣告活動也已開始投放。\n原片 06:03:42 ↗ 官方回放\n03 / 降低情境切換成本的專案管理\n情境切換（Context Switching）是指在不同任務間轉換時產生的認知負荷。透過設定專案經理機器人作為唯一的聯絡窗口，可以減少人類需要監督多個機器人的壓力。\n現場例子\n使用者只需與專案經理對話，由其負責向其他專家機器人下令、收集進度並發送截圖，讓使用者能抽離瑣碎細節進行核心決策。\n原片 06:24:50 ↗ 官方回放\n04 / 用既有活動資料形成下一輪建議\n分析代理讀取廣告平台資料，整理不同文案的支出、點擊率（CTR）與轉換率（CVR），並提出更新訊息及其他素材的建議。建議能作為討論起點，不代表應立即自動調整所有投放。\n現場例子\n講者沒有啟用新的廣告，而是改用本週既有活動示範分析；代理透過 Google Ads API 取回資料，提供精簡摘要與策略建議。\n原片 06:21:50 ↗ 官方回放\n04\n建立高效能 AI 行銷團隊的操作流程\n依現場的任務交接整理成可借用的工作法；不代表所有新活動都已完成部署或正式投放。\n定義職責範圍 (Scoping)\n將機器人視為新進隊友，明確界定其職責範圍（Swim lanes）與角色責任，確保其專業化。\n原片 06:27:51 ↗ 官方回放\n啟動研究與分析\n啟動市場研究機器人，透過爬取網站與搜尋競爭對手，識別市場缺口與機會。\n原片 06:06:44 ↗ 官方回放\n策略規劃與內容產出\n將研究結果交接給產品行銷員，撰寫定位簡報，並根據使用者在文件中的評論進行迭代更新。\n原片 06:09:47 ↗ 官方回放\n並行準備，再確認發布條件\n讓廣告代理準備活動架構，網站代理建立落地頁變更並回報進度。正式投放前仍須確認預算、帳戶設定與核准範圍；本場未啟用新的廣告活動。\n原片 06:15:48 ↗ 官方回放\n數據回饋與持續投資\n利用分析師提取數據進行成效評估，並透過持續提供回饋與背景資訊來提升機器人的能力。\n原片 06:21:50 ↗ 官方回放\n05\n現場問答，補上使用邊界\n問題與回應經濃縮，不是逐字引述。\n是否有任何領域是你不會允許它們自主執行的？你會建議我完全自動化嗎？\n建議將機器人視為隊友，從簡單任務與有限權限開始。隨著你提供更多提示與回饋，讓其符合你的風格，再逐步擴大權限。目標是建立豐富的記憶與上下文，最終處理複雜任務，但務必從小規模且低風險的任務開始。\n原片 06:30:57 ↗ 官方回放\n你認為行銷人員在使用這項技術時最大的障礙是什麼？\n最大的障礙是使用者可能不清楚產品實際的能力。如果只是將其當作另一個大型語言模型（LLM）來提問，就無法發揮價值；必須將其視為可以交付任務、處理聯絡人等實際工作的工具。\n原片 06:33:59 ↗ 官方回放\n如何確保公司的情報不會外洩，或資訊不會被用於模型訓練？\n我們提供數據隱私模式，使用者可以選擇加入或退出（opt in or out），以決定是否允許數據用於訓練。對於實際的安全需求，我們有專門團隊根據個案情況進行溝通與處理。\n原片 06:40:02 ↗ 官方回放\n有沒有辦法將 Grok Bot 連接到 Grok CLI 以及我們在 Grok 網站上的資訊？\n你可以讓 Grok Bot 指向你現有的工作，將其視為工作的框架（Harness），這樣就能整合上下文。此外，你可以透過自己的電腦將 Grok Bot 直接與 Grok CLI 連接。\n原片 06:37:00 ↗ 官方回放\n06\n哪些地方不能直接照單全收\n分清楚現場示範、講者判斷與整理者提醒。\n網站上線不等於廣告已投放\n現場先展示建置中的落地頁，稍後由代理回報網站已發布；新的廣告活動則仍未啟用。成效分析用的是既有活動資料，不能把整場示範概括成所有素材都已上線。\n原片 06:21:50 ↗ 官方回放\n數據隱私與安全\n輸入資訊的安全性需根據個案情況處理，並建議透過隱私模式進行管理。\n原片 06:40:02 ↗ 官方回放\n自動化導入的風險\n不應立刻交出所有權限，應從低風險的小型任務開始逐步擴大權限。\n原片 06:30:57 ↗ 官方回放\n本站僅公開中文編輯整理，不提供完整逐字稿、原始演講畫面或錄影下載。原始內容權利屬於各自作者；請至官方回放觀看。\n由本機語音辨識與 Gemma 輔助整理，再做來源抽查及專名修正；仍可能有辨識誤差，產品狀態以原片當時為準。完整細節請回看官方錄影。沒有補造原始直播未錄到的段落。\n第三天主持人會談\n·\n第三天所有講題\n知識書庫 · Grok Galaxy Day 3\n來源與致謝\n回到知識書庫\n\n官方來源：https://x.com/i/broadcasts/1YGNrbXEeazGw"</script><style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: 14px 16px;
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: 8px 10px;
+        font-size: 12.5px;
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: 10px;
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        font-size: 11.5px;
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        cursor: pointer;
+        margin-right: 8px;
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 2px;
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: 12px 16px;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: 11.5px;
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: 8px;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .vt-comment-item .item-body {
+        font-size: 13px;
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: 11px;
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: 4px;
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: 10px 16px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea
+        id="vt-popup-textarea"
+        placeholder="對這段文字的評論 / 疑問 / 補充..."
+      ></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button
+          ><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:12.5px;line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Grok Galaxy", id: "local", project: "grok-galaxy" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 5px 16px;
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: 11.5px;
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script></body>
+</html>
