@@ -591,8 +591,8 @@ html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-un
 </div>
 </section>
 
-<section id="layers"><div class="sec-head"><span class="idx">06</span><h2>支柱三：糾正代理時，先想這五層</h2></div>
-<p class="sec-intro">14:56–18:57。第三點是把架構重構成對代理友善。講者說這可能是軟體團隊能做的最重要的事：如果你真心相信未來程式都由代理寫，程式碼庫就該設計成「預設就會做對」。講者把建立信任的做法排成一條由硬到軟的光譜（投影片旁註：新專案 vs 既有專案，講者未展開）。</p>
+<section id="layers"><div class="sec-head"><span class="idx">06</span><h2>支柱三：把架構改成對代理友善，以及糾正代理時的五層順序</h2></div>
+<p class="sec-intro">14:56–18:57。第三點是把架構重構成對代理友善。講者說這可能是軟體團隊能做的最重要的事：如果你真心相信未來程式都由代理寫，程式碼庫就該設計成「預設就會做對」。講者在這裡帶出一張由硬到軟的五層清單（投影片旁註：新專案 vs 既有專案，講者未展開）。這張清單在收尾時再次出現，被講者指定為整場唯一要帶走的重點（見第 09 段）。</p>
 <figure class="pt-fig">
 <ol class="pt-ladder">
 <li class="pt-l1"><span class="pt-n">1</span><div><h4>程式碼庫本身</h4><p>最好的記憶。代理會延續它讀到的寫法，不會每個 PR 都幫你重構。更進一步：用更好的資料結構或架構，讓錯誤寫法「根本不可能」出現。</p></div><span class="badge badge-clay">最硬</span></li>
@@ -677,6 +677,7 @@ html{scroll-padding-top:24px}body{line-height:1.75}a{color:var(--clay-d);text-un
 <p class="sec-intro">35:15–38:01。回到信任曲線：把需要的每一塊都想清楚，就能更信任代理、平行處理工作，也讓團隊每個人（每位工程師、每位「建造者」）都能在這些基礎上高效產出。</p>
 <blockquote class="pt-quote">「你會信任這個環境到一個程度，讓代理可以自由地去做。」「這不是什麼祕密，而是很多辛苦的工作。」<span>— 講者，37:24 與 37:37 附近（中文意譯）</span></blockquote>
 <h3 class="pt-h">下次糾正代理時：一張檢查表</h3>
+<p>講者最後回到第 06 段的五層清單，說如果整場只能帶走一件事，就是這張投影片：每次糾正代理，都從這五層想，而且照順序想。</p>
 <p class="g-small">整理者依最後一張投影片與講者口述整理成可操作的步驟；講者建議「照這個順序想」。<a class="g-time" href="https://x.com/poteto/status/2102050467505430555" aria-label="開啟原始影片，請跳至 36:23" target="_blank" rel="noopener noreferrer" title="開啟 X 原始影片後，請手動跳至所示時間">36:23 ↗ 影片</a></p>
 <ol class="g-flow">
 <li class="card"><h3>能不能讓這個錯寫不出來？</h3><p>改程式碼庫、架構或資料結構，讓錯誤寫法根本不存在。例如 Dune 用匯入規則，讓慢程式碼進不了畫面那一側。</p></li>
