@@ -494,9 +494,122 @@
     </style>
   <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script>
 <style>
-:root{--g500:#605f57;--clay:#a7482d;--clay-d:#963e27;--fg:var(--slate);--muted:var(--g700);--surface:var(--paper)}
+:root{--wrap-max:960px;--g500:#605f57;--clay:#a7482d;--clay-d:#963e27;--fg:var(--slate);--muted:var(--g700);--surface:var(--paper)}
 body{line-height:1.85}body h1{max-width:24ch;line-height:1.28}body h3{font-size:calc(21px * var(--fs, 1));font-weight:650;margin:calc(30px * var(--dens, 1)) 0 calc(12px * var(--dens, 1))}p{max-width:72ch;margin:calc(16px * var(--dens, 1)) 0}a{color:var(--clay-d);text-underline-offset:4px}button,textarea{font:inherit}button,summary{cursor:pointer}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}.f-back{display:inline-block;margin:calc(24px * var(--dens, 1)) 0 calc(8px * var(--dens, 1))}header.masthead{padding:calc(24px * var(--dens, 1)) 0 calc(32px * var(--dens, 1))}.f-lead{font-size:calc(21px * var(--fs, 1));color:var(--g700);max-width:60ch}.f-meta{display:flex;flex-wrap:wrap;gap:calc(10px * var(--dens, 1)) calc(24px * var(--dens, 1));font-size:calc(13px * var(--fs, 1));color:var(--g700);margin:calc(24px * var(--dens, 1)) 0}.f-scope,.f-small{font-size:calc(14px * var(--fs, 1));color:var(--g700)}.f-summary{background:var(--g100);border-left:4px solid var(--clay);padding:calc(20px * var(--dens, 1)) calc(28px * var(--dens, 1));margin:calc(28px * var(--dens, 1)) 0}.f-summary h2,.f-summary h3{font-size:calc(23px * var(--fs, 1));font-weight:650;margin:0 0 calc(12px * var(--dens, 1))}.f-summary p{margin:calc(10px * var(--dens, 1)) 0}.f-actions{display:flex;flex-wrap:wrap;align-items:center;gap:calc(12px * var(--dens, 1));margin:calc(20px * var(--dens, 1)) 0}.f-actions button,.f-actions>a{padding:calc(10px * var(--dens, 1)) calc(18px * var(--dens, 1));border:1.5px solid var(--clay-d);border-radius:10px;text-decoration:none;background:var(--paper);color:var(--clay-d)}.f-actions button:first-child{background:var(--clay-d);color:var(--paper)}.f-time{font-family:var(--mono);font-size:calc(13px * var(--fs, 1));margin:calc(16px * var(--dens, 1)) 0 calc(24px * var(--dens, 1));line-height:2}.f-time a{display:inline-block}.f-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(20px * var(--dens, 1));margin:calc(24px * var(--dens, 1)) 0}.f-three{grid-template-columns:repeat(3,minmax(0,1fr))}.f-grid>*{min-width:0}.f-grid h3{margin:0 0 calc(14px * var(--dens, 1))}.f-note{font-size:calc(15px * var(--fs, 1));background:var(--g100);padding:calc(18px * var(--dens, 1)) calc(22px * var(--dens, 1));border-radius:10px;max-width:78ch;margin:calc(24px * var(--dens, 1)) 0}.f-figure{margin:calc(26px * var(--dens, 1)) 0;background:var(--paper);border:1.5px solid var(--g300);border-radius:14px;padding:calc(24px * var(--dens, 1))}.f-figure figcaption{font-size:calc(13px * var(--fs, 1));color:var(--g700);margin-top:calc(20px * var(--dens, 1));max-width:85ch}.f-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;gap:calc(20px * var(--dens, 1));padding:0;margin:0;counter-reset:step}.f-steps li{border-top:3px solid var(--clay);padding-top:calc(14px * var(--dens, 1));counter-increment:step}.f-steps li:before{content:counter(step,decimal-leading-zero);display:block;font-family:var(--mono);color:var(--clay);font-size:calc(13px * var(--fs, 1))}.f-steps strong,.f-steps span{display:block}.f-steps span{font-size:calc(15px * var(--fs, 1));margin-top:calc(6px * var(--dens, 1))}.f-ladder{list-style:none;padding:0;margin:0}.f-ladder li{display:grid;grid-template-columns:100px 1fr;gap:calc(20px * var(--dens, 1));padding:calc(16px * var(--dens, 1)) 0;border-bottom:1px solid var(--g200)}.f-ladder li:last-child{border-bottom:none}.f-ladder li>span{color:var(--clay);font-size:calc(14px * var(--fs, 1));font-weight:650}.f-ladder p{margin:calc(6px * var(--dens, 1)) 0}.f-list{padding-left:calc(24px * var(--dens, 1));max-width:78ch}.f-list li{margin:calc(12px * var(--dens, 1)) 0}.f-prompt{border-left:3px solid var(--clay);padding:calc(8px * var(--dens, 1)) calc(24px * var(--dens, 1));margin:calc(28px * var(--dens, 1)) 0;max-width:78ch}.f-prompt footer{font-size:calc(13px * var(--fs, 1));color:var(--g700)}.f-details{border:1.5px solid var(--g300);border-radius:10px;padding:calc(18px * var(--dens, 1)) calc(22px * var(--dens, 1));margin:calc(26px * var(--dens, 1)) 0}.f-details summary{font-weight:650}.f-details ul{padding-left:calc(24px * var(--dens, 1));max-width:78ch}.f-details li{margin:calc(12px * var(--dens, 1)) 0}.f-dialog{width:min(760px,94vw);max-height:85vh;border:1.5px solid var(--g300);border-radius:14px;padding:calc(24px * var(--dens, 1));background:var(--ivory);color:var(--slate)}.f-dialog::backdrop{background:rgba(20,20,19,.4)}.f-dialog textarea{width:100%;height:45vh;resize:vertical;padding:calc(14px * var(--dens, 1));background:var(--paper);color:var(--slate);border:1px solid var(--g500)}.f-dialog h2{font-size:calc(24px * var(--fs, 1));margin:0 0 calc(16px * var(--dens, 1))}.vt-comment-item .item-quote{font-style:normal}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-comment-list{max-width:calc(100vw - 32px)}
 @media(max-width:800px){.f-grid,.f-three,.f-steps{grid-template-columns:1fr}.f-ladder li{grid-template-columns:1fr;gap:calc(6px * var(--dens, 1))}.f-figure{padding:calc(18px * var(--dens, 1))}.f-summary{padding:calc(18px * var(--dens, 1))}.f-lead{font-size:calc(19px * var(--fs, 1))}.sec-head{gap:calc(10px * var(--dens, 1))}.sec-head h2{font-size:calc(25px * var(--fs, 1))}.sec-head .idx{width:28px}section{margin-top:calc(48px * var(--dens, 1))}nav.toc a{font-size:calc(14px * var(--fs, 1))}.f-time a{display:block}.f-dialog{padding:calc(18px * var(--dens, 1))}body h1{font-size:calc(36px * var(--fs, 1))}}
+/* One centered reading column: prose and visual blocks share the same edges. */
+main.wrap {
+  font-size: calc(17px * var(--fs, 1));
+  line-height: 1.9;
+}
+.wrap p,
+.wrap .f-note,
+.wrap .f-list,
+.wrap .f-prompt,
+.wrap .f-details ul,
+.wrap figcaption {
+  max-width: none;
+}
+.wrap > section {
+  margin-top: calc(56px * var(--dens, 1));
+  padding-top: calc(36px * var(--dens, 1));
+  border-top: 1px solid var(--g300);
+}
+.sec-head {
+  position: relative;
+  display: block;
+  margin-bottom: calc(12px * var(--dens, 1));
+}
+.sec-head .idx {
+  position: absolute;
+  right: calc(100% + 16px);
+  top: 7px;
+  width: 28px;
+}
+.sec-head h2 {
+  font-family: var(--sans);
+  font-size: calc(28px * var(--fs, 1));
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+.f-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(8px * var(--dens, 1)) calc(20px * var(--dens, 1));
+  margin: 0 0 calc(28px * var(--dens, 1));
+  font-family: var(--sans);
+  font-size: calc(14px * var(--fs, 1));
+  line-height: 1.7;
+}
+.wrap section > h3 {
+  margin: calc(32px * var(--dens, 1)) 0 calc(12px * var(--dens, 1));
+  font-size: calc(21px * var(--fs, 1));
+  line-height: 1.5;
+}
+.f-grid {
+  gap: calc(16px * var(--dens, 1));
+  margin: calc(28px * var(--dens, 1)) 0;
+}
+.f-grid .card {
+  padding: calc(24px * var(--dens, 1));
+  border-radius: 10px;
+}
+.f-grid h3 {
+  font-size: calc(19px * var(--fs, 1));
+  line-height: 1.5;
+}
+.f-grid p {
+  margin: 0;
+  font-size: calc(16px * var(--fs, 1));
+  line-height: 1.85;
+}
+.f-note {
+  border-radius: 6px;
+  border-left: 3px solid var(--g300);
+  padding: calc(20px * var(--dens, 1)) calc(24px * var(--dens, 1));
+  line-height: 1.8;
+}
+.f-summary {
+  border-radius: 0 8px 8px 0;
+}
+nav.toc {
+  padding-bottom: calc(8px * var(--dens, 1));
+  gap: calc(10px * var(--dens, 1));
+}
+nav.toc a {
+  border-radius: 8px;
+  font-size: calc(14px * var(--fs, 1));
+}
+@media (max-width: 1100px) {
+  .sec-head .idx {
+    position: static;
+    display: block;
+    width: auto;
+    margin-bottom: calc(8px * var(--dens, 1));
+  }
+}
+@media (max-width: 640px) {
+  main.wrap {
+    padding-left: calc(20px * var(--dens, 1));
+    padding-right: calc(20px * var(--dens, 1));
+    font-size: calc(16px * var(--fs, 1));
+  }
+  .wrap > section {
+    margin-top: calc(40px * var(--dens, 1));
+    padding-top: calc(28px * var(--dens, 1));
+  }
+  .sec-head h2 {
+    font-size: calc(24px * var(--fs, 1));
+  }
+  .f-grid .card,
+  .f-note {
+    padding: calc(18px * var(--dens, 1));
+  }
+  .f-time {
+    gap: calc(10px * var(--dens, 1));
+  }
+}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
 @media print{.f-actions,.f-dialog,.vt-comment-pill,.vt-comment-trigger,nav.toc{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}}
 </style>
