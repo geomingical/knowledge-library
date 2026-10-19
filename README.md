@@ -28,6 +28,8 @@
 2. 在首頁 `index.html` 加一張卡片，並更新篇數與分類數字。
 3. 開 PR，合併後網站自動更新。
 
+完整的字幕取得、來源核對、視覺化、瀏覽器驗證與發布流程，見 [AGENTS.md](AGENTS.md)。原始素材留在本機，不隨文章提交。
+
 ## 內容與權利
 
 各頁是中文學習筆記與整理者自製圖解。原始演講、影片與畫面的權利屬於各自作者；本站不提供錄影下載。頁面以 [html-visualizer](https://github.com/chenjackle45/html-visualizer)（MIT）製作。
