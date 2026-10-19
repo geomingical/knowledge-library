@@ -11,6 +11,7 @@
 | `2025_karpathy/` | Andrej Karpathy〈Deep Dive into LLMs〉完整中文伴讀 |
 | `2026_grok-galaxy/` | Grok Bot Galaxy 三天活動的演講筆記與工作室紀錄 |
 | `2026_poteto-agent-trust/` | lauren（@poteto）談如何讓 AI 程式設計代理值得信任 |
+| `2026_felix-claude-workflows/` | Felix Rieseberg 的 Claude 工作方法：房屋規劃、個人儀表板與硬體核准按鈕 |
 
 ## 結構
 

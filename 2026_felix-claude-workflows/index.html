@@ -1,0 +1,1937 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="html-visualizer-mode" content="teaching-companion">
+<meta name="description" content="Felix Rieseberg 的 Claude 工作方法：房屋與家具規劃、個人儀表板、實體核准按鈕，以及模型選擇與錯誤修正。">
+<title>把麻煩交給 Claude，把心力留給創造｜Felix Rieseberg 訪談筆記</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ════════════════════════════════════════════ */
+      /* Anthropic / Claude 官方品牌風 design tokens     */
+      /* ════════════════════════════════════════════ */
+      :root {
+        --wrap-max: 1760px; /* 內容寬度：設定檔 tokens.layout.maxWidth 與「風格設定」改的就是它 */
+        --ivory: #faf9f5;
+        --paper: #ffffff;
+        --slate: #141413;
+        --clay: #d97757;
+        --clay-d: #b85c3e;
+        --oat: #e3dacc;
+        --olive: #788c5d;
+        --g100: #f0eee6;
+        --g200: #e6e3da;
+        --g300: #d1cfc5;
+        --g500: #87867f;
+        --g700: #3d3d3a;
+
+        --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, "PingFang TC",
+          "Noto Sans TC", Helvetica, Arial, sans-serif;
+        --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+        /* 狀態 semantic（warm-aligned，低調用） */
+        --green: #788c5d;
+        --green-soft: #eff1e8;
+        --green-border: #c8d2b8;
+        --red: #b85c3e;
+        --red-soft: #faebe3;
+        --red-border: #e8c4af;
+        --yellow: #c49845;
+        --yellow-soft: #f8efd9;
+        --yellow-border: #e8d4a0;
+        --olive-soft: #eff1e8;
+        --olive-border: #c8d2b8;
+        --clay-soft: #fbe9df;
+        --orange: #c9740a;
+        --orange-soft: #fbeedc;
+        --orange-border: #eccfa3;
+        --purple: #9333ea;
+        --purple-soft: #faf5ff;
+        --purple-border: #e9d5ff;
+
+        /* ── 兼容舊 component-library snippet ─────────── */
+        /* 通用元件用 --bg / --accent / --text 等命名、alias 到 Anthropic palette */
+        --bg: var(--ivory);
+        --bg-card: var(--paper);
+        --bg-soft: var(--g100);
+        --bg-soft-2: var(--g200);
+        --border: var(--g300);
+        --border-strong: var(--g500);
+        --text: var(--slate);
+        --text-muted: var(--g700);
+        --text-soft: var(--g500);
+        --accent: var(--clay);
+        --accent-soft: #fbe9df;
+        --accent-strong: var(--clay-d);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: var(--ivory);
+        color: var(--slate);
+        font-family: var(--sans);
+        font-size: calc(16px * var(--fs, 1));
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        /* 保險絲：擋掉合成斜體與合成粗體。中文字體沒有義大利體與部分字重，
+           瀏覽器會機械傾斜／加粗漢字，筆畫變形。寧可不強調也不要變形字。 */
+        font-synthesis: none;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Layout                                       */
+      /* ════════════════════════════════════════════ */
+      .wrap {
+        width: min(94vw, var(--wrap-max, 1760px)); /* --wrap-max：設定檔或「風格設定」的內容寬度 */
+        margin: 0 auto;
+        padding: 0 calc(32px * var(--dens, 1)) calc(140px * var(--dens, 1));
+      }
+      /* 長段落文字護欄：寬容器下避免一行上百字難讀（grid/卡片/表格不受限、吃滿寬） */
+      .intro,
+      p.prose,
+      .body-text {
+        max-width: 72ch;
+      }
+      /* 排印細節：pretty 讓段落尾行不留孤字、balance 讓多行標題長度接近。
+         現代瀏覽器都支援，成本為零。 */
+      p,
+      li,
+      td {
+        text-wrap: pretty;
+      }
+      h1,
+      h2,
+      h3 {
+        text-wrap: balance;
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Masthead / Hero                              */
+      /* ════════════════════════════════════════════ */
+      header.masthead {
+        padding: calc(80px * var(--dens, 1)) 0 calc(56px * var(--dens, 1));
+        border-bottom: 1.5px solid var(--g300);
+        margin-bottom: calc(12px * var(--dens, 1));
+      }
+      .eyebrow {
+        font-family: var(--mono);
+        font-size: calc(12px * var(--fs, 1));
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--g500);
+        margin-bottom: calc(18px * var(--dens, 1));
+        display: flex;
+        align-items: center;
+        gap: calc(12px * var(--dens, 1));
+      }
+      .eyebrow::before {
+        content: "";
+        width: 24px;
+        height: 1.5px;
+        background: var(--clay);
+      }
+      /* ⚠️ 選擇器要比 Tailwind preflight 高一級。它的 reset 把 h1 的 font-size
+         與 font-weight 設成 inherit，而它的樣式是 JS 動態注入、排在本區塊之後，
+         同優先級下會蓋過來——裸 `h1` 選擇器的字級會整個失效退回 16px。 */
+      body h1 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: calc(clamp(38px, 5.4vw, 62px) * var(--fs, 1));
+        line-height: 1.06;
+        letter-spacing: -0.018em;
+        margin: 0 0 calc(8px * var(--dens, 1));
+        max-width: 17ch;
+        color: var(--slate);
+      }
+      /* 中文標題強調 — 不要用斜體（漢字沒有斜體傳統，見上方 font-synthesis 註解）。
+         兩種手法依語氣選：B 換字重（預設、安靜）／ C 螢光筆（重、一頁最多一兩次）。 */
+      h1 em,
+      h2 em,
+      h3 em {
+        font-style: normal;
+        font-weight: 700;
+        color: var(--clay);
+      }
+      .hl {
+        background: linear-gradient(transparent 58%, #f7d9a0 58%);
+        font-style: normal;
+      }
+      /* 內文的 <em>：保險絲擋掉合成斜體後，中文 em 會跟正文一模一樣（強調消失）。
+         補字重讓它看得出來；英文字體有真的義大利體，斜體照樣保留。
+         （標題的 em 另有 700 ＋ clay，選擇器較具體、不受這條影響） */
+      em {
+        font-weight: 600;
+      }
+      .intro {
+        font-size: calc(16.5px * var(--fs, 1));
+        color: var(--g700);
+        margin: calc(22px * var(--dens, 1)) 0 0;
+        max-width: 620px;
+      }
+      .intro a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+      .intro a:hover {
+        text-decoration-color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* TOC pills                                    */
+      /* ════════════════════════════════════════════ */
+      nav.toc {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(8px * var(--dens, 1));
+        padding: calc(26px * var(--dens, 1)) 0 0;
+      }
+      nav.toc a {
+        font-size: calc(12.5px * var(--fs, 1));
+        padding: calc(7px * var(--dens, 1)) calc(14px * var(--dens, 1));
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--g700);
+        background: var(--paper);
+        transition:
+          border-color 120ms,
+          color 120ms;
+        display: inline-flex;
+        align-items: center;
+        gap: calc(7px * var(--dens, 1));
+      }
+      nav.toc a .n {
+        font-family: var(--mono);
+        font-size: calc(10px * var(--fs, 1));
+        color: var(--g500);
+      }
+      nav.toc a:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      nav.toc a:hover .n {
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Section                                      */
+      /* ════════════════════════════════════════════ */
+      section {
+        margin-top: calc(72px * var(--dens, 1));
+        scroll-margin-top: 28px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: calc(16px * var(--dens, 1));
+        margin-bottom: calc(10px * var(--dens, 1));
+      }
+      .sec-head .idx {
+        font-family: var(--mono);
+        font-size: calc(13px * var(--fs, 1));
+        color: var(--clay);
+        font-weight: 600;
+        width: 34px;
+        flex-shrink: 0;
+      }
+      .sec-head h2 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: calc(27px * var(--fs, 1));
+        margin: 0;
+        letter-spacing: -0.012em;
+        color: var(--slate);
+      }
+      .sec-head .count {
+        font-family: var(--mono);
+        font-size: calc(11px * var(--fs, 1));
+        color: var(--g500);
+        background: var(--g100);
+        padding: calc(2px * var(--dens, 1)) calc(8px * var(--dens, 1));
+        border-radius: 999px;
+      }
+      .sec-intro {
+        font-size: calc(14.5px * var(--fs, 1));
+        color: var(--g700);
+        max-width: 700px;
+        margin: 0 0 calc(24px * var(--dens, 1)) calc(50px * var(--dens, 1));
+      }
+      /* ── 窄螢幕溢出防護 ─────────────────────────
+         grid／flex 子項的 min-width 預設是 auto，裡面放 pre 或 table 會被內容
+         撐開 → 整頁橫向溢出。自訂 grid 容器時對子項加 min-width: 0，
+         或直接用 .grid-safe。（跑版不在標記裡，一定要用版面健檢量。） */
+      .grid-safe > * {
+        min-width: 0;
+      }
+      pre,
+      table {
+        max-width: 100%;
+      }
+      pre {
+        overflow-x: auto;
+      }
+
+      @media (max-width: 900px) {
+        .sec-intro {
+          margin-left: 0;
+        }
+        /* 區段內容的 50px 視覺軸縮排在手機上是純浪費 */
+        div[style*="margin-left: 50px"], /* 區段內容的 50px 視覺軸縮排在手機上是純浪費 */
+        div[style*="margin-left: calc(50px"] {
+          margin-left: 0 !important;
+        }
+        /* 長指令改換行而非橫捲：手機上捲軸比斷行難用 */
+        pre {
+          white-space: pre-wrap;
+          word-break: break-word;
+          font-size: calc(11px * var(--fs, 1));
+        }
+        /* 固定佈局讓表格文字換行，不把版面撐破 */
+        table {
+          table-layout: fixed;
+          width: 100%;
+        }
+        table th,
+        table td {
+          word-break: break-word;
+          overflow-wrap: anywhere;
+        }
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Cards                                        */
+      /* ════════════════════════════════════════════ */
+      .card {
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        padding: calc(24px * var(--dens, 1));
+      }
+      .card-soft {
+        background: var(--g100);
+        border: 1.5px solid var(--g200);
+        border-radius: 10px;
+        padding: calc(16px * var(--dens, 1));
+      }
+
+      /* link card with hover */
+      a.link-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 150ms ease,
+          box-shadow 150ms ease,
+          border-color 150ms ease;
+        overflow: hidden;
+      }
+      a.link-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(20, 20, 19, 0.1);
+        border-color: var(--slate);
+      }
+      .link-card .body {
+        padding: calc(18px * var(--dens, 1)) calc(20px * var(--dens, 1)) calc(16px * var(--dens, 1));
+      }
+      .link-card .title {
+        font-family: var(--serif);
+        font-size: calc(19px * var(--fs, 1));
+        font-weight: 500;
+        line-height: 1.22;
+        color: var(--slate);
+        margin-bottom: calc(7px * var(--dens, 1));
+        letter-spacing: -0.008em;
+      }
+      .link-card .desc {
+        font-size: calc(13.5px * var(--fs, 1));
+        color: var(--g700);
+        line-height: 1.5;
+      }
+      .link-card .file {
+        font-family: var(--mono);
+        font-size: calc(11px * var(--fs, 1));
+        color: var(--g500);
+        border-top: 1px solid var(--g100);
+        padding-top: calc(11px * var(--dens, 1));
+        margin-top: calc(14px * var(--dens, 1));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .link-card .file .arrow {
+        transition: transform 150ms ease;
+        color: var(--g300);
+      }
+      a.link-card:hover .file {
+        color: var(--clay);
+      }
+      a.link-card:hover .file .arrow {
+        transform: translateX(3px);
+        color: var(--clay);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Pills / Badges                               */
+      /* ════════════════════════════════════════════ */
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(6px * var(--dens, 1));
+        padding: calc(4px * var(--dens, 1)) calc(10px * var(--dens, 1));
+        border: 1.5px solid var(--g300);
+        border-radius: 999px;
+        font-size: calc(11.5px * var(--fs, 1));
+        color: var(--g700);
+        background: var(--paper);
+      }
+      .pill.clay {
+        border-color: var(--clay);
+        color: var(--clay);
+      }
+      .pill.olive {
+        border-color: var(--olive);
+        color: var(--olive);
+      }
+
+      /* status badge — warm-aligned semantic */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(4px * var(--dens, 1));
+        padding: calc(3px * var(--dens, 1)) calc(10px * var(--dens, 1));
+        font-size: calc(11px * var(--fs, 1));
+        font-weight: 600;
+        font-family: var(--mono);
+        border-radius: 9999px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .badge-green {
+        background: var(--green-soft);
+        color: var(--green);
+        border: 1px solid var(--green-border);
+      }
+      .badge-red {
+        background: var(--red-soft);
+        color: var(--red);
+        border: 1px solid var(--red-border);
+      }
+      .badge-yellow {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+        border: 1px solid var(--yellow-border);
+      }
+      .badge-clay {
+        background: #fbe9df;
+        color: var(--clay-d);
+        border: 1px solid #f0c9b5;
+      }
+      .badge-oat {
+        background: var(--oat);
+        color: var(--g700);
+        border: 1px solid var(--g300);
+      }
+
+      /* ════════════════════════════════════════════ */
+      /* Footer                                       */
+      /* ════════════════════════════════════════════ */
+      footer.foot {
+        margin-top: calc(100px * var(--dens, 1));
+        border-top: 1.5px solid var(--g300);
+        padding-top: calc(36px * var(--dens, 1));
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: calc(20px * var(--dens, 1));
+        flex-wrap: wrap;
+        font-size: calc(13px * var(--fs, 1));
+        color: var(--g500);
+      }
+      footer.foot .k {
+        font-family: var(--serif);
+        font-style: italic;
+        color: var(--g700);
+        font-size: calc(15px * var(--fs, 1));
+      }
+      footer.foot a {
+        color: var(--clay);
+        text-decoration-color: var(--oat);
+        text-underline-offset: 3px;
+      }
+          /* ── 手機：收掉桌機的水平留白 ─────────────────
+         390px 螢幕上，容器 32px ＋ 卡片 24px 的左右內距吃掉 112px，加上 94vw
+         的寬度限制，文字只剩七成八。桌機上那是呼吸空間，手機上是純損失。
+         （2026-09-21 實測：清單項在 390px 只剩 218px 寬。）*/
+      @media (max-width: 640px) {
+        .wrap {
+          width: 100%;
+          padding-left: calc(14px * var(--dens, 1));
+          padding-right: calc(14px * var(--dens, 1));
+        }
+        .card {
+          padding-left: calc(16px * var(--dens, 1));
+          padding-right: calc(16px * var(--dens, 1));
+        }
+        ul,
+        ol {
+          padding-left: calc(20px * var(--dens, 1));
+        }
+      }
+    </style>
+  <script>if(window.tailwind){window.tailwind.config={corePlugins:{preflight:false}};}</script>
+<style>
+:root{--g500:#605f57;--clay:#a7482d;--clay-d:#963e27;--fg:var(--slate);--muted:var(--g700);--surface:var(--paper)}
+body{line-height:1.85}body h1{max-width:24ch;line-height:1.28}body h3{font-size:calc(21px * var(--fs, 1));font-weight:650;margin:calc(30px * var(--dens, 1)) 0 calc(12px * var(--dens, 1))}p{max-width:72ch;margin:calc(16px * var(--dens, 1)) 0}a{color:var(--clay-d);text-underline-offset:4px}button,textarea{font:inherit}button,summary{cursor:pointer}:focus-visible{outline:3px solid var(--clay-d);outline-offset:4px}.f-back{display:inline-block;margin:calc(24px * var(--dens, 1)) 0 calc(8px * var(--dens, 1))}header.masthead{padding:calc(24px * var(--dens, 1)) 0 calc(32px * var(--dens, 1))}.f-lead{font-size:calc(21px * var(--fs, 1));color:var(--g700);max-width:60ch}.f-meta{display:flex;flex-wrap:wrap;gap:calc(10px * var(--dens, 1)) calc(24px * var(--dens, 1));font-size:calc(13px * var(--fs, 1));color:var(--g700);margin:calc(24px * var(--dens, 1)) 0}.f-scope,.f-small{font-size:calc(14px * var(--fs, 1));color:var(--g700)}.f-summary{background:var(--g100);border-left:4px solid var(--clay);padding:calc(20px * var(--dens, 1)) calc(28px * var(--dens, 1));margin:calc(28px * var(--dens, 1)) 0}.f-summary h2,.f-summary h3{font-size:calc(23px * var(--fs, 1));font-weight:650;margin:0 0 calc(12px * var(--dens, 1))}.f-summary p{margin:calc(10px * var(--dens, 1)) 0}.f-actions{display:flex;flex-wrap:wrap;align-items:center;gap:calc(12px * var(--dens, 1));margin:calc(20px * var(--dens, 1)) 0}.f-actions button,.f-actions>a{padding:calc(10px * var(--dens, 1)) calc(18px * var(--dens, 1));border:1.5px solid var(--clay-d);border-radius:10px;text-decoration:none;background:var(--paper);color:var(--clay-d)}.f-actions button:first-child{background:var(--clay-d);color:var(--paper)}.f-time{font-family:var(--mono);font-size:calc(13px * var(--fs, 1));margin:calc(16px * var(--dens, 1)) 0 calc(24px * var(--dens, 1));line-height:2}.f-time a{display:inline-block}.f-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:calc(20px * var(--dens, 1));margin:calc(24px * var(--dens, 1)) 0}.f-three{grid-template-columns:repeat(3,minmax(0,1fr))}.f-grid>*{min-width:0}.f-grid h3{margin:0 0 calc(14px * var(--dens, 1))}.f-note{font-size:calc(15px * var(--fs, 1));background:var(--g100);padding:calc(18px * var(--dens, 1)) calc(22px * var(--dens, 1));border-radius:10px;max-width:78ch;margin:calc(24px * var(--dens, 1)) 0}.f-figure{margin:calc(26px * var(--dens, 1)) 0;background:var(--paper);border:1.5px solid var(--g300);border-radius:14px;padding:calc(24px * var(--dens, 1))}.f-figure figcaption{font-size:calc(13px * var(--fs, 1));color:var(--g700);margin-top:calc(20px * var(--dens, 1));max-width:85ch}.f-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));list-style:none;gap:calc(20px * var(--dens, 1));padding:0;margin:0;counter-reset:step}.f-steps li{border-top:3px solid var(--clay);padding-top:calc(14px * var(--dens, 1));counter-increment:step}.f-steps li:before{content:counter(step,decimal-leading-zero);display:block;font-family:var(--mono);color:var(--clay);font-size:calc(13px * var(--fs, 1))}.f-steps strong,.f-steps span{display:block}.f-steps span{font-size:calc(15px * var(--fs, 1));margin-top:calc(6px * var(--dens, 1))}.f-ladder{list-style:none;padding:0;margin:0}.f-ladder li{display:grid;grid-template-columns:100px 1fr;gap:calc(20px * var(--dens, 1));padding:calc(16px * var(--dens, 1)) 0;border-bottom:1px solid var(--g200)}.f-ladder li:last-child{border-bottom:none}.f-ladder li>span{color:var(--clay);font-size:calc(14px * var(--fs, 1));font-weight:650}.f-ladder p{margin:calc(6px * var(--dens, 1)) 0}.f-list{padding-left:calc(24px * var(--dens, 1));max-width:78ch}.f-list li{margin:calc(12px * var(--dens, 1)) 0}.f-prompt{border-left:3px solid var(--clay);padding:calc(8px * var(--dens, 1)) calc(24px * var(--dens, 1));margin:calc(28px * var(--dens, 1)) 0;max-width:78ch}.f-prompt footer{font-size:calc(13px * var(--fs, 1));color:var(--g700)}.f-details{border:1.5px solid var(--g300);border-radius:10px;padding:calc(18px * var(--dens, 1)) calc(22px * var(--dens, 1));margin:calc(26px * var(--dens, 1)) 0}.f-details summary{font-weight:650}.f-details ul{padding-left:calc(24px * var(--dens, 1));max-width:78ch}.f-details li{margin:calc(12px * var(--dens, 1)) 0}.f-dialog{width:min(760px,94vw);max-height:85vh;border:1.5px solid var(--g300);border-radius:14px;padding:calc(24px * var(--dens, 1));background:var(--ivory);color:var(--slate)}.f-dialog::backdrop{background:rgba(20,20,19,.4)}.f-dialog textarea{width:100%;height:45vh;resize:vertical;padding:calc(14px * var(--dens, 1));background:var(--paper);color:var(--slate);border:1px solid var(--g500)}.f-dialog h2{font-size:calc(24px * var(--fs, 1));margin:0 0 calc(16px * var(--dens, 1))}.vt-comment-item .item-quote{font-style:normal}.vt-comment-popup{max-width:calc(100vw - 16px)}.vt-comment-list{max-width:calc(100vw - 32px)}
+@media(max-width:800px){.f-grid,.f-three,.f-steps{grid-template-columns:1fr}.f-ladder li{grid-template-columns:1fr;gap:calc(6px * var(--dens, 1))}.f-figure{padding:calc(18px * var(--dens, 1))}.f-summary{padding:calc(18px * var(--dens, 1))}.f-lead{font-size:calc(19px * var(--fs, 1))}.sec-head{gap:calc(10px * var(--dens, 1))}.sec-head h2{font-size:calc(25px * var(--fs, 1))}.sec-head .idx{width:28px}section{margin-top:calc(48px * var(--dens, 1))}nav.toc a{font-size:calc(14px * var(--fs, 1))}.f-time a{display:block}.f-dialog{padding:calc(18px * var(--dens, 1))}body h1{font-size:calc(36px * var(--fs, 1))}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+@media print{.f-actions,.f-dialog,.vt-comment-pill,.vt-comment-trigger,nav.toc{display:none!important}.wrap{width:100%;padding:0}.card{break-inside:avoid}}
+</style>
+<style id="vt-profile" data-profile-hash="da39a3ee5e"></style>
+</head><body>
+<main class="wrap">
+<a class="f-back" href="../index.html#collection">← 回到知識書庫</a>
+<header class="masthead" id="top">
+<p class="eyebrow">HOW I AI · FELIX RIESEBERG · 2026</p>
+<h1>把麻煩交給 Claude，<br><em>把心力留給創造。</em></h1>
+<p class="f-lead">從一張沒有尺寸的平面圖，到會更新的個人儀表板，再到桌上的實體核准按鈕：Claude Cowork 工程負責人如何把生活裡的問題，變成自己用得上的工具。</p>
+<div class="f-meta"><span>講者 Felix Rieseberg</span><span>主持 Claire Vo</span><span>影片 59:25</span><span>發布 2026/05/25 · 整理 2026/10/19</span></div>
+<p class="f-scope">依全片順序整理的繁體中文概念筆記，並非逐字翻譯。保留案例、思考轉折與限制；略去贊助口播、寒暄與訂閱宣傳。時間連結是原影片的章節入口，不代表每句精確對時。本文依英文自動字幕與影片說明整理，未逐字人工聽校，也未重做影片中的三項實作。</p>
+</header>
+<div class="f-summary"><h2>先抓住一個問題</h2><p>當你又要手動找資料、輸入資料或更新同一份報告時，先問：<strong>我是在做真正想做的事，還是在替工具打雜？</strong>這一集的主線，是把交付給 AI 的任務往上一層想，而不是把每一次滑鼠操作交出去。</p></div>
+<div class="f-actions"><button type="button" id="preview-notes">預覽／複製本頁重點</button><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs" target="_blank" rel="noopener noreferrer">開啟原始影片 ↗</a></div>
+<p class="f-small">可選取正文加上評論；評論只存於這個瀏覽器，複製重點時會一併帶出。本頁需網路載入 Tailwind 樣式工具，不宣稱完全離線。</p>
+<nav class="toc" aria-label="筆記章節">
+<a href="#entry"><span class="n">01</span>三種入口</a><a href="#floor"><span class="n">02</span>平面圖</a><a href="#models"><span class="n">03</span>模型選擇</a><a href="#planner"><span class="n">04</span>3D 與郵件</a><a href="#abstraction"><span class="n">05</span>往上一層想</a><a href="#artifacts"><span class="n">06</span>持續更新的成品</a><a href="#communication"><span class="n">07</span>與 AI 溝通</a><a href="#briefing"><span class="n">08</span>會前準備</a><a href="#discovery"><span class="n">09</span>發現用途</a><a href="#waiting"><span class="n">10</span>不用盯著等</a><a href="#hardware"><span class="n">11</span>硬體小夥伴</a><a href="#children"><span class="n">12</span>孩子的創意</a><a href="#mistakes"><span class="n">13</span>出錯怎麼辦</a><a href="#sources"><span class="n">14</span>來源與邊界</a>
+</nav>
+<section id="entry"><div class="sec-head"><span class="idx">01</span><h2>為什麼 Claude 還有那麼多入口？</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=160s" target="_blank" rel="noopener noreferrer">02:40 起 · 工作範圍與介面分工 ↗</a></p>
+<p>Felix 說自己參與 Claude Cowork、Claude Code、Claude for Chrome，以及 macOS／Windows 桌面應用的開發，並強調這些都是團隊工作。主持人則常用 Cowork，因為她接觸的許多人一看到終端機——用文字指令操作電腦的介面——就感到不安。</p>
+<p>為什麼不把所有功能合成一個入口？Felix 的比喻是：AI 產品還像智慧型手機外形尚未定型的年代。當時大家嘗試不同形狀與鍵盤位置，現在則是在試探人與 AI 最好的互動方式。多個選項會增加使用者負擔，但也幫產品先辨認使用意圖。</p>
+<div class="f-grid f-three"><article class="card"><h3>快速得到回答</h3><p>帶著一個問題來，希望迅速理解或取得資訊。</p></article><article class="card"><h3>完成較深入的工作</h3><p>帶著資料與目標，讓 AI 持續處理一項任務。</p></article><article class="card"><h3>進行工程開發</h3><p>需要程式開發工具與更直接的電腦操作能力。</p></article></div>
+<p class="f-note">這是講者在訪談當時對產品分工的解釋，不是永久功能規格。他想像未來可能不必再讓使用者先選入口，但沒有承諾推出時間。</p>
+</section>
+<section id="floor"><div class="sec-head"><span class="idx">02</span><h2>第一個案例：沒有尺寸的房屋平面圖</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=355s" target="_blank" rel="noopener noreferrer">05:55 起 · 搬家的實際問題 ↗</a></p>
+<p>Felix 準備搬家，房仲給的行銷用平面圖沒有標示尺寸。他把平面圖、房屋揭露文件、貸款資訊與其他紀錄放進資料夾，讓 Cowork 讀取，再請它找出尺寸依據，製作有單位與尺寸的版本。<strong>節目中使用的是另做的假房屋資料夾，不是公開他的私人文件。</strong></p>
+<p>他回述真正搬家時的結果：Claude 找到車庫的許可文件，利用其中已知的車庫尺寸推算其餘平面圖。接著，他要它提供家具與空間配置的例子：床放哪裡、嬰兒房怎麼安排。當 Claude 問要如何呈現時，他改變想法：與其只把家具畫在圖上，不如做一個可以自己移動家具的互動規劃器。</p>
+<figure class="f-figure"><ol class="f-steps"><li><strong>原始材料</strong><span>平面圖與房屋文件</span></li><li><strong>找尺寸依據</strong><span>講者案例中的車庫許可資料</span></li><li><strong>探索配置</strong><span>從靜態方案改成互動工具</span></li></ol><figcaption>整理者依講述重畫的任務演進；不是原影片畫面，也不是建築測量流程。</figcaption></figure>
+<p class="f-note"><strong>整理者提醒：</strong>這是一個探索空間配置的案例，影片沒有提供尺寸誤差測試。由一處尺寸推算整張圖，仍可能受到圖片比例與資料版本影響；買家具、施工或搬運前應核對實際尺寸，不能把 3D 外觀逼真當成量測準確。</p>
+</section>
+<section id="models"><div class="sec-head"><span class="idx">03</span><h2>選 Sonnet 還是 Opus，先看問題有多清楚</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=592s" target="_blank" rel="noopener noreferrer">09:52 起 · 講者的選模準則 ↗</a></p>
+<p>Felix 用 Sonnet 做平面圖任務。他認為 Sonnet 4.6 足以處理自己多數日常需求，但這裡的「不難」不是單純指程式碼少，而是<strong>自己已經知道要解決什麼問題</strong>。</p>
+<div class="f-grid"><article class="card"><h3>問題已定義清楚 → 常用 Sonnet 4.6</h3><p>例如「我有平面圖，缺少尺寸，請找依據並重畫」。輸入、缺口與期望輸出都相對明確，模型主要負責把事情完成。</p></article><article class="card"><h3>連自己要什麼都還不確定 → 傾向 Opus</h3><p>他需要的不只是回答，而是重新理解問題、辨認真正需求。他用律師、會計師、醫師與創意工作者來比喻：專業的一部分，是看出客戶口中的需求不等於實際需求。</p></article></div>
+<p>主持人把這個選擇歸納成「你有多能界定問題」，不只是「技術有多複雜」。Felix 也沒有說一定要反覆挑選模型；他認為大多數使用者不必把這件事想得像他那麼細。</p>
+<p class="f-note">這是 2026 年 5 月訪談中的個人使用經驗，不是成本、速度或準確率的對照實驗。不能從這段推論所有任務都應採同一模型。</p>
+</section>
+<section id="planner"><div class="sec-head"><span class="idx">04</span><h2>從 2D 到 3D，再把真正的家具放進去</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=757s" target="_blank" rel="noopener noreferrer">12:37 · 互動家具規劃器 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=870s" target="_blank" rel="noopener noreferrer">14:30 · 郵件作為物品資料來源 ↗</a></p>
+<p>Claude 交出的工具可以移動家具，也可以切進 3D 空間，像遊戲一樣走進房子。Felix 說，自己並沒有一開始指定要用 3D；他看到的是 Cowork 讓 Claude 在自己的虛擬機器——一個獨立的電腦執行環境——裡，運用 Python 等工具製作解法。他稍微查看過工作紀錄，其中包含利用圖片對比找牆與牆厚的處理。</p>
+<p>真正讓這個工具貼近生活的下一步，是把「想像中的家具」換成「家裡已經有的家具」。他沒有逐件查型號、量尺寸再輸入，而是讓 Claude 從已授權的郵件裡找購買紀錄，將買過的家具加入規劃器。</p>
+<p>主持人特別停下來解釋：信箱雖然凌亂，卻保留收據、購物通知，甚至過去寄給搬家公司的物品清單。它可能成為個人物品清冊的材料。她接著提出衣物整理的想法；Felix 延伸成虛擬衣櫃與穿搭／添購建議。<strong>衣櫃是當場提出的延伸想法，不是本集完成展示的工具。</strong></p>
+<div class="f-note"><strong>整理者提醒：</strong>購買紀錄不等於目前所有權。禮物、退貨、二手出售、沒有電子收據的物品都可能造成差異；實作時應保留來源，讓本人確認清單。連接信箱也代表處理敏感個資，應只授予任務需要的存取範圍。</div>
+</section>
+<section id="abstraction"><div class="sec-head"><span class="idx">05</span><h2>往上一層想：從代填資料，變成不用再整理</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=958s" target="_blank" rel="noopener noreferrer">15:58 起 · 反待辦清單、承諾追蹤與小工具的品質尺度 ↗</a></p>
+<p>Felix 一度開始在家具工具裡手動輸入床的長寬，才突然意識到：為什麼是自己填？他可以先告訴 Claude 家具名稱，讓它找尺寸；再往上一層，連家具名稱都不必逐件列出，改讓它從郵件辨認。</p>
+<figure class="f-figure"><ol class="f-ladder"><li><span>原本</span><div><strong>自己找資料、填尺寸</strong><p>人仍然在做重複的資訊搬運。</p></div></li><li><span>上一層</span><div><strong>告訴 Claude 家具名稱，請它找尺寸</strong><p>委派的是一段工作，不只是一次輸入。</p></div></li><li><span>再上一層</span><div><strong>讓 Claude 從既有資料找出有哪些家具</strong><p>人把心力留給空間配置與想要的體驗。</p></div></li><li><span>持續運作</span><div><strong>思考如何更新，讓下次不用重來</strong><p>主持人提出的下一問：一年後再用，資料能否已經準備好？</p></div></li></ol><figcaption>「提高抽象層次」的白話版本：從交代操作步驟，改成交代要得到的結果。最後一層是持續維護的設計方向，不是影片已驗證的家具自動更新功能。</figcaption></figure>
+<h3>承諾追蹤：不要每次把所有訊息重讀一遍</h3>
+<p>Felix 常在 X／Twitter 回覆使用者：「把紀錄給我，我會幫你看。」承諾變多後，靠記憶就容易漏掉。他讓 Claude 讀取訊息、記住自己答應的事，並要求它想辦法避免每次都重讀全部歷史。之後它能提醒他，兩週前答應的事情還沒完成。</p>
+<p>他認為 Claude 大概用了 SQLite 資料庫與許多文字檔，但沒有仔細查看。重點是追蹤和提醒有沒有幫上忙；不能把這段自述當成已公開、可直接照抄的系統架構。</p>
+<h3>只給自己用的小工具，不必先設計成服務一百萬人</h3>
+<p>Felix 描述自己從逐行監督，逐漸轉向看結果與實際影響。他沒有讀家具規劃器的程式碼，因為只是和太太短期規劃房子，可能一個月後就不用了；沒有必要先為龐大用戶規模最佳化。主持人也認為，這類個人微型工具能解決問題，比是否採用自己偏好的架構更重要。</p>
+<p>談到跨越自己的專業領域時，他提到向 AI 追問醫療資訊，理解醫師的說明；同時明說問題也應該問醫師。這個例子是在談補充理解，不是把醫療判斷交給模型。</p>
+<p class="f-note"><strong>整理者界線：</strong>「不逐行看程式」不等於「不驗結果」。個人、短期、低風險的探索工具，和涉及付款、醫療、安全或多人資料的正式服務，不能套用同一審查尺度。</p>
+</section>
+<section id="artifacts"><div class="sec-head"><span class="idx">06</span><h2>從一次性的檔案，走向能更新資料的成品</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=1394s" target="_blank" rel="noopener noreferrer">23:14 · Artifacts 是什麼 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=1562s" target="_blank" rel="noopener noreferrer">26:02 · 個人儀表板示範 ↗</a></p>
+<p><strong>Artifact 是工作產生的成品</strong>：例如格式化的詩頁、PDF、試算表、簡報，甚至前面的單檔家具規劃器。Felix 先請 Claude 做一頁排版好看的詩，展示這個概念，再轉向「同一份成品需要反覆更新」的問題。</p>
+<p>他的例子是創辦人募資：簡報核心故事可能相同，但不同投資人有不同背景，公司的註冊人數等數據也會變動。若每週都要重新整理，真正值得解決的是如何保留成品意圖，同時更新資料或適應受眾。</p>
+<div class="f-grid"><article class="card"><h3>一般成品</h3><p>生成時把內容與資料放進檔案。它適合留存某一時間點的結果，但後續資料變動不會憑空同步進來。</p></article><article class="card"><h3>Live artifact：可重新取資料的成品</h3><p>利用連接器取得來源資訊，讓同一個成品可以更新。訪談強調的是重新載入資料，不應直接理解成所有來源都會無延遲、持續串流。</p></article></div>
+<h3>示範怎麼開始</h3>
+<p>Felix 先連接 Spotify，再要求建立每日個人儀表板，涵蓋 Spotify、Gmail、Calendar、Notion 等與生活相關的資料來源。他指定平靜的現代編輯風格，並補上「做成 live artifact」。主持人提醒：直接使用產品功能名稱，有助於說清楚要的是能更新的那種成品。</p>
+<p class="f-note"><strong>示範資料的重要限制：</strong>Felix 在提示中明確要求「這是產品展示，不要使用真實資料，全部編造」。因此節目展示能支持版型與操作方式的說明，不能拿來證明他的私人信箱、行事曆或所有連接器都已成功同步。頁面上的示範數據不是可引用的真實統計。</p>
+</section>
+<section id="communication"><div class="sec-head"><span class="idx">07</span><h2>禮貌是自己的習慣；清楚的前提才是工作指示</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=1717s" target="_blank" rel="noopener noreferrer">28:37 · 為什麼對 Claude 有禮貌 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=1828s" target="_blank" rel="noopener noreferrer">30:28 · 讓探索任務更清楚 ↗</a></p>
+<p>等待生成時，主持人問 Felix 是否總會寫「Dear Claude」。他的回答是會：不是因為電腦晶片在意，而是自己想保持友善的溝通習慣。主持人說，她也會加上「我相信你、你來做判斷」，藉此表達不希望每個小決定都被問回來。</p>
+<p>Felix 接著提供另一個具體經驗。他曾想在作業系統的桌布與圖示之間畫東西，這是藝術性的探索，不是已推出的產品。他知道系統有這個能力，只是不知道實作方法，因此會明說：「我知道這件事做得到，請找出方法；我知道這是在做藝術，仍然請往這個方向探索。」</p>
+<p>這樣做的價值，是讓 Claude 理解已知前提與探索目的，減少反覆討論「這是不是有實用價值」。<strong>這不等於只要說相信它，就會得到正確答案。</strong>節目沒有提供提示詞效果的對照測試；「我知道能做到」也應建立在真實依據上，而不是逼模型附和。</p>
+</section>
+<section id="briefing"><div class="sec-head"><span class="idx">08</span><h2>好的每日摘要，不只是把行事曆再念一次</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=1953s" target="_blank" rel="noopener noreferrer">32:33 · 看儀表板的真正用途 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2035s" target="_blank" rel="noopener noreferrer">33:55 · 連接器與更新 ↗</a></p>
+<p>第一版儀表板出來後，Felix 再次把前面的「往上一層想」帶回來。如果只是告訴他今天有哪些會議，自己看行事曆就好。更有價值的是讓 Claude 從會議延伸到相關的人與脈絡。</p>
+<ol class="f-list"><li><strong>今天要見誰？</strong>從行事曆辨認對象。</li><li><strong>最近聊了什麼？</strong>整理前次對話、主題與尚未解決的問題。</li><li><strong>對方最近在做什麼？</strong>若是同事，從可存取的 Slack 訊息找工作脈絡。</li><li><strong>我需要先理解什麼？</strong>把可能談到的議題與背景知識備好，而非只列提醒。</li></ol>
+<p>主持人指出，live artifact 的更新按鈕讓讀者能重新取得資料；連接器則沿用已完成的帳號授權，不需要在每個成品裡再手動塞一把 API 金鑰。Felix 補充，不只內建商店裡的連接器，也能接自己的來源。</p>
+<p class="f-note"><strong>整理者提醒：</strong>連接器是把外部服務接進 Claude 的工具，仍受服務權限與可取得資料限制。既有授權不代表可以任意擴大讀取、把私人內容分享出去，或保證來源永遠最新。本文沒有替你連接任何帳號。</p>
+</section>
+<section id="discovery"><div class="sec-head"><span class="idx">09</span><h2>真正的落差：不知道哪些麻煩可以交出去</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2102s" target="_blank" rel="noopener noreferrer">35:02 · 改成早期電腦風格 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2275s" target="_blank" rel="noopener noreferrer">37:55 · 從工具到工作方式 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2512s" target="_blank" rel="noopener noreferrer">41:52 · 反向訪談 ↗</a></p>
+<p>Felix 接著要求儀表板改成 2000 年代早期的軟體風格，輸入時少打一個零，模型仍從上下文理解他的意思。這段不只是改皮膚：他期待不懂程式的人，也能把自己的品味與專業經驗帶進工具，不必先找到工程師才能實現。</p>
+<p>主持人認為最大的落差不是工具能力，而是人們還沒養成「把這個問題交給 AI 試試」的習慣。搬家文件、新生兒睡眠紀錄、個人儀表板，都可能是起點。Felix 用自己在 Slack 工作的經驗呼應：如果只是把封閉郵件搬進聊天室，收益有限；開放頻道、讓人看見工作脈絡，才真正改變協作方式。AI 也需要重新思考工作，而非照原樣搬運。</p>
+<div class="f-summary"><h3>不知道怎麼開始，就請 AI 先訪談你</h3><p>主持人稱之為 reverse interview（反向訪談）：先說明自己的角色、忙碌之處與主要困擾，再請 AI 問問題，最後提出它能幫忙的方法。不是先研究完整功能清單，而是從自己真的卡住的地方開始。</p></div>
+<blockquote class="f-prompt"><p>「我的日常角色是……，目前最困擾的是……。請先問我幾個問題，了解我怎麼做事，再告訴我你能幫上什麼忙。」</p><footer>整理者依節目概念改寫的起手問法，不是逐字引文。實際提供資訊時，避免直接貼入不必要的個資。</footer></blockquote>
+</section>
+<section id="waiting"><div class="sec-head"><span class="idx">10</span><h2>等待的設計：不是讓人更有耐心，而是讓人能離開</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2550s" target="_blank" rel="noopener noreferrer">42:30 · 非同步工作 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2645s" target="_blank" rel="noopener noreferrer">44:05 · 改版結果 ↗</a>　<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2728s" target="_blank" rel="noopener noreferrer">45:28 · 把創作心力還給人 ↗</a></p>
+<p>生成需要時間，主持人問怎麼讓等待不那麼惱人。Felix 的重點是非同步——交辦後可以先做別的事，結果稍後回來，而不是全程坐著等。只要結果品質值得，人本來就能接受某些工作不會立即完成。</p>
+<p>他回憶 Slack 早期傳訊息立刻顯示成功或失敗，但網路不穩，容易過早報錯。後來改成先嘗試幾次，再在仍失敗時通知使用者。他也以穿過隧道時傳訊息為比喻：短暫等待與重試，比立即把網路問題推給使用者更合理。這段是在說產品體驗，不是承諾每一種 AI 操作都可以安全重試。</p>
+<p>兩人聊天時，復古版儀表板完成了：包含早期電腦風格、持續走動的時鐘，以及呼應當年音樂軟體的 Winamp 元素。這回扣前面「讓工具長成自己想要的樣子」，但仍然是用假資料製作的展示。</p>
+<p>Felix 傾向用多一點等待換更好的成果。他不希望人的新工作變成盯著 AI 移動滑鼠，而是讓 AI 在背景處理煩事，自己去想值得做的創作。能否離開畫面，最後牽涉的是<strong>對完成品質與必要通知的信任</strong>，不只是耐心。</p>
+</section>
+<section id="hardware"><div class="sec-head"><span class="idx">11</span><h2>約 20 美元的硬體小夥伴，把核准搬到桌上</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=2804s" target="_blank" rel="noopener noreferrer">46:44 起 · 從想法到實體按鈕 ↗</a></p>
+<p>Felix 自認不是硬體開發者，也沒有焊接背景。他買了一個帶小螢幕、Wi-Fi、藍牙與儲存空間的可程式化小裝置，接到電腦，再把想法交給 Claude Code：讓小小的 Claude 住在裝置上，完成事情時鼓勵自己，需要核准操作時就在大按鈕上處理。</p>
+<p>他說這次程式一次就產生成功，自己沒有修正；也說已公開原始碼，看到其他人做出類似作品。這是他的個案經驗，不是對任意硬體的成功率保證。節目中他提到裝置為 19 美元，主持人收尾則用含運約 20 美元概括；不是本文查到的即時售價。</p>
+<h3>影片中的連接與核准順序</h3>
+<ol class="f-list"><li>在桌面應用的 Help／Troubleshooting 中啟用開發者模式；畫面警告這需要一定的操作知識，應用隨後重新啟動。</li><li>開啟新出現的開發者選單，選擇 Hardware Buddy，掃描藍牙裝置。</li><li>找到裝置並完成配對碼確認，建立連線。</li><li>請 Claude 建立並寫入 <code>hello world.txt</code>，刻意觸發一項需要許可的操作。</li><li>裝置提示後，Felix 按下實體核准按鈕，Claude 接著執行。</li></ol>
+<p>主持人也分享自己曾逆向理解一個迷你復古螢幕的藍牙通訊，做出可傳文字的小工具。兩人的共同感受是：AI 讓原本不熟悉的領域變得能嘗試，而且在製作過程中仍會學到東西。</p>
+<p class="f-note"><strong>整理者提醒：</strong>本集沒有提供足以重現的完整硬體型號、韌體版本與安裝指令；也不能把「有藍牙應該能試」當成相容性承諾。開發者模式與選單是錄影當時的狀態。實體按鈕改變的是核准介面，不是取消審查；應先知道准許的是哪個檔案或動作，不能把它做成無條件同意器。</p>
+</section>
+<section id="children"><div class="sec-head"><span class="idx">12</span><h2>孩子的優勢：還沒先學會「這不可能」</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=3153s" target="_blank" rel="noopener noreferrer">52:33 起 · 個人化硬體與創作 ↗</a></p>
+<p>主持人想像，孩子不一定要使用完整電腦介面，也可以透過用途明確的小裝置互動。Felix 則分享別人寄給他的孩子創作影片：拍下孩子畫的小動物，請 Claude 把它變成跳躍遊戲或類似 Flappy Bird 的主角。</p>
+<p>他覺得孩子的創意迷人，因為還沒有被多年「電腦做不到」的經驗限制。主持人補充自己九歲孩子對資安與終端機的興趣。這些故事呼應本集主題：先提出想實現的體驗，不必先把自己限制在熟悉的工具操作裡。</p>
+<p class="f-note">這段是家長與創作者的觀察，不是兒童教育成效研究，也不是服務年齡規範或無監督使用的建議。</p>
+</section>
+<section id="mistakes"><div class="sec-head"><span class="idx">13</span><h2>Claude 做錯時，修工作方法，不只重說「別犯錯」</h2></div>
+<p class="f-time"><a href="https://www.youtube.com/watch?v=-tdNsYi8AXs&amp;t=3270s" target="_blank" rel="noopener noreferrer">54:30 起 · 回顧、失敗修正與產品回饋 ↗</a></p>
+<p>主持人在回顧後追問：如果 Claude 一直犯錯，Felix 怎麼處理？他的做法是直接和它檢查工作過程：先說自己原本期待的結果，再問彼此在哪一步產生不同理解，以及如何避免下次重演。他明說這不一定奏效，AI 仍然會犯錯。</p>
+<div class="f-grid"><article class="card"><h3>先找出偏差在哪裡</h3><p>預期是什麼？實際做了什麼？哪一項資料、假設或任務描述讓方向分岔？不要只用更強烈的語氣要求再試。</p></article><article class="card"><h3>再調整整個工作環境</h3><p>改善資料來源、降低資料雜訊、修改最初的提示或操作安排；必要時先試跑——只預演結果，不立即造成真實變動——再決定是否正式執行。</p></article></div>
+<p>Felix 的結論通常不是立即認定「AI 永遠做不到」，而是看看能否改變外圍工具與任務設定，並請 Claude 一起提出改善方法。不過，模型對自己錯誤的解釋也只是待驗證的說法，仍需要用實際資料與結果核對。</p>
+<p>最後，他鼓勵使用產品裡的讚／倒讚回饋。依他的說法，團隊會用這些訊號改善模型與產品；比起在對話裡罵它，更能讓問題進入產品回饋管道。訪談沒有保證每個回報都會獲得人工回覆或特定修復日期。</p>
+</section>
+<section id="sources"><div class="sec-head"><span class="idx">14</span><h2>來源、閱讀邊界與下一次怎麼用</h2></div>
+<p>原始影片：<a href="https://www.youtube.com/watch?v=-tdNsYi8AXs" target="_blank" rel="noopener noreferrer">How the engineer behind Claude Cowork actually uses Claude | Felix Rieseberg (Anthropic)</a>，由 How I AI 發布於 2026/05/25，長 59:25。章節名稱與入口時間來自影片發布者的說明，內容依英文自動字幕整理。</p>
+<p>本頁只公開中文編輯筆記與自製的任務演進示意，不公開原始字幕、下載資料、私人來源檔或影片截圖。字幕把 Claude 等專名多次辨識成近音字；整理時依影片標題與說明使用正式名稱，其餘未能確定的專名不作為論證依據。沒有把字幕自述冒充獨立實測。</p>
+<details class="f-details"><summary>延伸到節目官方整理，不把它當成我們實測過的教學</summary><ul><li><a href="https://www.chatprd.ai/how-i-ai/felix-rieseberg-claude-code-cowork-workflows-for-3d-house-design-and-hardware-buddy" target="_blank" rel="noopener noreferrer">本集官方文章與工作流程入口</a>（網址取自影片說明）。</li><li>本頁未替讀者測試硬體購買、房屋重建、帳號連接或 Claude 目前版本；操作前應核對當前官方文件與權限。</li><li>模型選擇、一次生成成功、硬體價格與介面位置，都保留訪談當時的時間背景。</li></ul></details>
+<div class="f-summary"><h3>把這一集帶回自己的工作</h3><p>挑一件你反覆整理、又不享受的事。先描述想得到的結果，再提供最少必要的資料；讓 AI 提出解法，親自確認結果。能用之後才思考如何持續更新、何時提醒，以及哪些動作仍須你核准。</p><p class="f-small">以上是整理者依本集概念歸納的練習，不是影片中的逐字指令。</p></div>
+</section>
+<footer class="foot"><a href="../index.html#collection">← 回到知識書庫</a><a href="#top">回到頁首 ↑</a><div>視覺化方法與範本：<a href="https://github.com/chenjackle45/html-visualizer" target="_blank" rel="noopener noreferrer">html-visualizer</a> · <a href="../licenses/html-visualizer-MIT.txt">MIT 授權</a><br>原影片及內容權利屬原作者；本站為學習筆記。</div></footer>
+</main>
+<dialog id="export-dialog" class="f-dialog" aria-labelledby="export-title"><h2 id="export-title">本頁重點與評論</h2><textarea id="export-text" aria-label="待複製的本頁重點"></textarea><p id="export-status" aria-live="polite"></p><div class="f-actions"><button id="copy-export" type="button">確認複製</button><button id="close-export" type="button">關閉</button></div></dialog>
+<script id="summary-data" type="application/json">"Felix Rieseberg：把麻煩交給 Claude，把心力留給創造\n來源：https://www.youtube.com/watch?v=-tdNsYi8AXs\n發布：2026/05/25；影片長 59:25。依自動字幕整理，非逐字翻譯、非實作重現。\n\n05:55 房屋案例：用平面圖與相關文件尋找尺寸依據，再製作可探索配置的工具；推估尺寸仍需實測。\n09:52 模型選擇：講者對界定清楚的日常任務常用 Sonnet 4.6；連需求還不確定時傾向 Opus。這不是模型比較實驗。\n12:37–14:30 把平面圖轉成互動 3D 規劃器，從已授權郵件找購買的家具；收據不代表目前仍擁有。\n15:58 往上一層想：從手動填尺寸，到讓 AI 找家具，再思考如何持續更新。承諾追蹤器是講者另一個持續維護的例子。\n23:14–26:02 Artifact 是成品；live artifact 可接資料來源更新。儀表板展示明確要求假資料，不能當成真實帳號同步的證據。\n28:37–30:28 禮貌關乎自己的溝通習慣；探索任務應說清楚前提與目的，不能只用鼓勵代替驗證。\n32:33–33:55 每日準備不只列會議：整理對象、近期對話、工作脈絡與需先了解的事。連接器仍受權限限制。\n35:02–41:52 工具可依自己的品味改造；不知道用途時，請 AI 先訪談自己，再提出可協助的工作。\n42:30–45:28 非同步工作讓人交辦後能先做別的事。信任與必要通知，比盯著載入畫面更重要。\n46:44 實體硬體按鈕示範藍牙配對與核准操作。約 20 美元是訪談中的價格說法，不是現售價或相容性保證。\n52:33 孩子的創意提醒我們別預先限制可能性；不是兒童教育研究或無監督使用建議。\n54:30 出錯時先找預期與實際分岔處，改善資料、提示、工作環境與試跑機制；仍需驗證結果。\n\n練習：挑一件反覆又不享受的事，描述結果、提供最少資料、驗證成果，再設計更新、提醒與人工核准。\n"</script>
+    <style>
+      .vt-comment-trigger {
+        position: fixed;
+        z-index: 9998;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: calc(6px * var(--dens, 1)) calc(12px * var(--dens, 1));
+        font-size: calc(12px * var(--fs, 1));
+        color: var(--clay);
+        font-family: var(--mono);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.12);
+        display: none;
+        align-items: center;
+        gap: calc(6px * var(--dens, 1));
+        transition: all 0.15s;
+      }
+      .vt-comment-trigger:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-popup {
+        position: fixed;
+        z-index: 9999;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        padding: calc(14px * var(--dens, 1)) calc(16px * var(--dens, 1));
+        width: 340px;
+        display: none;
+      }
+      .vt-comment-popup .quote {
+        background: var(--g100);
+        border-left: 3px solid var(--clay);
+        padding: calc(8px * var(--dens, 1)) calc(10px * var(--dens, 1));
+        font-size: calc(12.5px * var(--fs, 1));
+        color: var(--g700);
+        line-height: 1.45;
+        margin-bottom: calc(10px * var(--dens, 1));
+        max-height: 80px;
+        overflow-y: auto;
+      }
+      .vt-comment-popup textarea {
+        width: 100%;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: calc(8px * var(--dens, 1)) calc(10px * var(--dens, 1));
+        font-size: calc(13px * var(--fs, 1));
+        font-family: var(--sans);
+        resize: vertical;
+        min-height: 60px;
+        color: var(--slate);
+        box-sizing: border-box;
+      }
+      .vt-comment-popup textarea:focus {
+        outline: none;
+        border-color: var(--clay);
+      }
+      .vt-comment-popup .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: calc(10px * var(--dens, 1));
+        font-size: calc(11.5px * var(--fs, 1));
+      }
+      .vt-comment-popup .hint {
+        color: var(--g500);
+        font-family: var(--mono);
+      }
+      .vt-comment-popup button.send {
+        background: var(--clay);
+        color: var(--paper);
+        border: none;
+        border-radius: 8px;
+        padding: calc(6px * var(--dens, 1)) calc(14px * var(--dens, 1));
+        font-size: calc(12.5px * var(--fs, 1));
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .vt-comment-popup button.send:hover {
+        background: var(--clay-d);
+      }
+      .vt-comment-popup button.cancel {
+        background: transparent;
+        border: 1px solid var(--g300);
+        color: var(--g500);
+        border-radius: 8px;
+        padding: calc(6px * var(--dens, 1)) calc(12px * var(--dens, 1));
+        font-size: calc(12.5px * var(--fs, 1));
+        cursor: pointer;
+        margin-right: calc(8px * var(--dens, 1));
+      }
+      mark.vt-comment-mark {
+        background: var(--oat);
+        padding: 0 calc(2px * var(--dens, 1));
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      mark.vt-comment-mark:hover {
+        background: #d5c4a8;
+      }
+      .vt-comment-pill {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 9990;
+        background: var(--paper);
+        border: 1.5px solid var(--clay);
+        border-radius: 999px;
+        padding: calc(8px * var(--dens, 1)) calc(14px * var(--dens, 1));
+        font-family: var(--mono);
+        font-size: calc(12px * var(--fs, 1));
+        color: var(--clay);
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(20, 20, 19, 0.1);
+        display: none;
+        align-items: center;
+        gap: calc(6px * var(--dens, 1));
+        transition: all 0.15s;
+      }
+      .vt-comment-pill.is-active {
+        display: inline-flex;
+      }
+      .vt-comment-pill:hover {
+        background: var(--clay);
+        color: var(--paper);
+      }
+      .vt-comment-pill strong {
+        font-weight: 600;
+      }
+      .vt-comment-list {
+        position: fixed;
+        right: 16px;
+        bottom: 60px;
+        width: 360px;
+        max-height: 60vh;
+        z-index: 9991;
+        background: var(--paper);
+        border: 1.5px solid var(--g300);
+        border-radius: 14px;
+        box-shadow: 0 12px 32px rgba(20, 20, 19, 0.15);
+        display: none;
+        flex-direction: column;
+      }
+      .vt-comment-list.is-open {
+        display: flex;
+      }
+      .vt-comment-list-header {
+        background: var(--paper);
+        border-bottom: 1.5px solid var(--g200);
+        padding: calc(12px * var(--dens, 1)) calc(16px * var(--dens, 1));
+        font-family: var(--mono);
+        font-size: calc(11px * var(--fs, 1));
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--g500);
+        font-weight: 600;
+        border-radius: 14px 14px 0 0;
+      }
+      .vt-comment-list-items {
+        overflow-y: auto;
+        flex: 1;
+      }
+      .vt-comment-item {
+        padding: calc(12px * var(--dens, 1)) calc(16px * var(--dens, 1));
+        border-bottom: 1px solid var(--g200);
+      }
+      .vt-comment-item:last-child {
+        border-bottom: none;
+      }
+      .vt-comment-item .item-quote {
+        font-size: calc(11.5px * var(--fs, 1));
+        color: var(--g500);
+        font-style: italic;
+        border-left: 2px solid var(--oat);
+        padding-left: calc(8px * var(--dens, 1));
+        line-height: 1.4;
+        margin-bottom: calc(6px * var(--dens, 1));
+      }
+      .vt-comment-item .item-body {
+        font-size: calc(13px * var(--fs, 1));
+        color: var(--slate);
+        line-height: 1.5;
+      }
+      .vt-comment-item .item-del {
+        font-size: calc(11px * var(--fs, 1));
+        color: var(--g500);
+        background: none;
+        border: none;
+        cursor: pointer;
+        margin-top: calc(4px * var(--dens, 1));
+        padding: 0;
+        font-family: inherit;
+      }
+      .vt-comment-item .item-del:hover {
+        color: var(--red);
+      }
+      .vt-comment-list-footer {
+        border-top: 1.5px solid var(--g200);
+        padding: calc(10px * var(--dens, 1)) calc(16px * var(--dens, 1));
+        display: flex;
+        justify-content: space-between;
+        gap: calc(8px * var(--dens, 1));
+        border-radius: 0 0 14px 14px;
+        background: var(--g100);
+      }
+      .vt-comment-list-footer button {
+        background: transparent;
+        border: 1.5px solid var(--g300);
+        border-radius: 8px;
+        padding: calc(6px * var(--dens, 1)) calc(12px * var(--dens, 1));
+        font-size: calc(12px * var(--fs, 1));
+        color: var(--g700);
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .vt-comment-list-footer button:hover {
+        border-color: var(--slate);
+        color: var(--slate);
+      }
+      .vt-comment-list-footer button.copy {
+        background: var(--clay);
+        color: var(--paper);
+        border-color: var(--clay);
+      }
+      .vt-comment-list-footer button.copy:hover {
+        background: var(--clay-d);
+      }
+      body.vt-has-existing-export .vt-comment-list-footer button.copy {
+        display: none;
+      }
+    </style>
+    <button class="vt-comment-trigger" id="vt-comment-trigger"> 評論</button>
+    <div class="vt-comment-popup" id="vt-comment-popup">
+      <div class="quote" id="vt-popup-quote"></div>
+      <textarea
+        id="vt-popup-textarea"
+        placeholder="對這段文字的評論 / 疑問 / 補充..."
+      ></textarea>
+      <div class="actions">
+        <span class="hint">⌘ + Enter 送出 · Esc 取消</span>
+        <div>
+          <button class="cancel" id="vt-popup-cancel">取消</button
+          ><button class="send" id="vt-popup-send">送出</button>
+        </div>
+      </div>
+    </div>
+    <button class="vt-comment-pill" id="vt-comment-pill">
+       <strong id="vt-count">0</strong>
+    </button>
+    <div class="vt-comment-list" id="vt-comment-list">
+      <div class="vt-comment-list-header">— 我的評論</div>
+      <div class="vt-comment-list-items" id="vt-comment-list-items"></div>
+      <div class="vt-comment-list-footer">
+        <button id="vt-clear-all">全部清除</button>
+        <button class="copy" id="vt-copy-fallback"> 複製評論</button>
+      </div>
+    </div>
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- 共用複製工具 — file:// 下瀏覽器停用 navigator.clipboard，   -->
+    <!-- 一定會落到 execCommand 備援；備援也可能失敗，必須誠實回報   -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      // 三段式：clipboard API → execCommand 備援 → 都失敗回 false（不假報成功）
+      window.vtCopyText = async function (text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (err) {
+            // 落到 execCommand 備援
+          }
+        }
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        try {
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          return document.execCommand("copy") === true;
+        } catch (err) {
+          return false;
+        } finally {
+          ta.remove();
+        }
+      };
+
+      // 複製失敗時的出路：把文字放進可選取區域並全選，使用者按一次 Cmd+C 即可
+      // target 有給就用頁面既有的預覽區（wrap 為它的外層、會自動展開）；
+      // 沒有預覽區就建一個臨時可選取區（雙擊可關閉）。
+      window.vtSelectForManualCopy = function (text, target, wrap) {
+        let node = target;
+        if (node) {
+          node.textContent = text;
+          if (wrap) wrap.classList.remove("hidden");
+        } else {
+          node = document.getElementById("vt-manual-copy-box");
+          if (!node) {
+            node = document.createElement("pre");
+            node.id = "vt-manual-copy-box";
+            node.title = "雙擊關閉";
+            node.style.cssText =
+              "position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10000;" +
+              "max-width:min(720px,92vw);max-height:40vh;overflow:auto;white-space:pre-wrap;" +
+              "background:#fff;color:#111;border:1.5px solid #999;border-radius:10px;" +
+              "padding:14px 16px;font-size:calc(12.5px * var(--fs, 1));line-height:1.6;" +
+              "box-shadow:0 12px 40px rgba(0,0,0,.28)";
+            node.addEventListener("dblclick", function () {
+              node.remove();
+            });
+            document.body.appendChild(node);
+          }
+          node.textContent = text;
+        }
+        node.scrollIntoView({ block: "nearest" });
+        const sel = window.getSelection();
+        if (sel) {
+          const range = document.createRange();
+          range.selectNodeContents(node);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        return node;
+      };
+    </script>
+
+    <script>
+      (function () {
+        const S = "vt-comments-" + location.pathname,
+          L = 80;
+        let c = JSON.parse(localStorage.getItem(S) || "[]"),
+          sel = null;
+        const $ = (i) => document.getElementById(i),
+          tr = $("vt-comment-trigger"),
+          p = $("vt-comment-popup"),
+          pq = $("vt-popup-quote"),
+          pt = $("vt-popup-textarea"),
+          pi = $("vt-comment-pill"),
+          ce = $("vt-count"),
+          le = $("vt-comment-list"),
+          li = $("vt-comment-list-items");
+        window.vtCollectComments = function () {
+          if (!c.length) return "";
+          return (
+            "\n\n---\n\n" +
+            c
+              .map((x) => {
+                const q =
+                  x.quote.length > L ? x.quote.slice(0, L) + "…" : x.quote;
+                return `@評論「${q}」\n  → ${x.body}`;
+              })
+              .join("\n\n")
+          );
+        };
+        function hs(e) {
+          if (
+            e.target.closest(
+              ".vt-comment-popup,.vt-comment-trigger,.vt-comment-pill,.vt-comment-list,button,input,select,textarea",
+            )
+          )
+            return;
+          setTimeout(() => {
+            const s = getSelection(),
+              t = s.toString().trim();
+            if (!t || t.length < 2) {
+              tr.style.display = "none";
+              return;
+            }
+            const r = s.getRangeAt(0),
+              b = r.getBoundingClientRect();
+            sel = { text: t, range: r.cloneRange() };
+            tr.style.display = "inline-flex";
+            tr.style.top = Math.max(8, b.top - 38) + "px";
+            tr.style.left = Math.max(8, b.left + b.width / 2 - 40) + "px";
+          }, 10);
+        }
+        document.addEventListener("mouseup", hs);
+        document.addEventListener("touchend", hs);
+        tr.addEventListener("click", op);
+        function op() {
+          if (!sel) return;
+          const q = sel.text.length > L ? sel.text.slice(0, L) + "…" : sel.text;
+          pq.textContent = q;
+          pt.value = "";
+          const t = tr.getBoundingClientRect();
+          let l = t.left;
+          if (l + 340 > innerWidth - 16) l = innerWidth - 356;
+          let to = t.bottom + 6;
+          if (to + 220 > innerHeight) to = t.top - 230;
+          p.style.left = Math.max(8, l) + "px";
+          p.style.top = Math.max(8, to) + "px";
+          tr.style.display = "none";
+          p.style.display = "block";
+          setTimeout(() => pt.focus(), 50);
+        }
+        $("vt-popup-cancel").addEventListener("click", cp);
+        $("vt-popup-send").addEventListener("click", sc);
+        pt.addEventListener("keydown", (e) => {
+          if (e.isComposing || e.keyCode === 229) return;
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            sc();
+          }
+          if (e.key === "Escape") cp();
+        });
+        function cp() {
+          p.style.display = "none";
+          sel = null;
+        }
+        function sc() {
+          const b = pt.value.trim();
+          if (!b || !sel) return cp();
+          const id = "c-" + Date.now(),
+            q = sel.text;
+          try {
+            const m = document.createElement("mark");
+            m.className = "vt-comment-mark";
+            m.dataset.commentId = id;
+            sel.range.surroundContents(m);
+          } catch (e) {}
+          c.push({ id, quote: q, body: b, ts: Date.now() });
+          ps();
+          rn();
+          cp();
+          getSelection().removeAllRanges();
+        }
+        function ps() {
+          localStorage.setItem(S, JSON.stringify(c));
+        }
+        function rn() {
+          ce.textContent = c.length;
+          pi.classList.toggle("is-active", c.length > 0);
+          if (!c.length) le.classList.remove("is-open");
+          li.innerHTML = c
+            .map((x) => {
+              const q =
+                x.quote.length > 60 ? x.quote.slice(0, 60) + "…" : x.quote;
+              return `<div class="vt-comment-item" data-id="${x.id}"><div class="item-quote">「${eh(q)}」</div><div class="item-body">${eh(x.body)}</div><button class="item-del" data-del="${x.id}">刪除</button></div>`;
+            })
+            .join("");
+          li.querySelectorAll("[data-del]").forEach((b) =>
+            b.addEventListener("click", () => dc(b.dataset.del)),
+          );
+        }
+        function dc(id) {
+          c = c.filter((x) => x.id !== id);
+          document
+            .querySelectorAll(`mark.vt-comment-mark[data-comment-id="${id}"]`)
+            .forEach((m) => {
+              const pr = m.parentNode;
+              while (m.firstChild) pr.insertBefore(m.firstChild, m);
+              pr.removeChild(m);
+              pr.normalize();
+            });
+          ps();
+          rn();
+        }
+        function eh(s) {
+          return String(s).replace(
+            /[&<>"']/g,
+            (ch) =>
+              ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;",
+              })[ch],
+          );
+        }
+        pi.addEventListener("click", () => le.classList.toggle("is-open"));
+        $("vt-clear-all").addEventListener("click", () => {
+          if (!c.length) return;
+          if (!confirm("確定清除全部 " + c.length + " 條評論？")) return;
+          document.querySelectorAll("mark.vt-comment-mark").forEach((m) => {
+            const pr = m.parentNode;
+            while (m.firstChild) pr.insertBefore(m.firstChild, m);
+            pr.removeChild(m);
+            pr.normalize();
+          });
+          c = [];
+          ps();
+          rn();
+        });
+        $("vt-copy-fallback").addEventListener("click", async (e) => {
+          if (!c.length) return;
+          const t = window.vtCollectComments().replace(/^\n\n---\n\n/, ""),
+            b = e.currentTarget,
+            o = b.textContent;
+          const ok = await window.vtCopyText(t);
+          if (ok) {
+            b.textContent = " 已複製";
+          } else {
+            // 複製不到就不假報成功：把評論放進臨時區域並全選
+            window.vtSelectForManualCopy(t);
+            b.textContent = "已選取 → 請按 Cmd+C";
+          }
+          setTimeout(() => (b.textContent = o), ok ? 2000 : 6000);
+        });
+        setTimeout(() => {
+          if (typeof window.vtBuildDecisionExport === "function")
+            document.body.classList.add("vt-has-existing-export");
+        }, 100);
+        document.addEventListener("click", (e) => {
+          if (
+            p.style.display === "block" &&
+            !e.target.closest(".vt-comment-popup,.vt-comment-trigger")
+          )
+            cp();
+        });
+        rn();
+      })();
+    </script>
+  
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- Session 識別 — 多視窗並行時分辨這份是哪個 session 產的     -->
+    <!-- 產出時把 scripts/session-label.sh 的結果填進下面兩個值      -->
+    <!-- 留空 = 整段停用（範本原檔即此狀態）                        -->
+    <!-- 完整說明見 references/session-identity.md                 -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <script>
+      window.VT_SESSION = { label: "Knowledge", id: "local", project: "Knowledge" };
+    </script>
+    <style>
+      .vt-session-badge {
+        display: flex;
+        align-items: center;
+        gap: calc(9px * var(--dens, 1));
+        padding: calc(5px * var(--dens, 1)) calc(16px * var(--dens, 1));
+        background: var(--vt-session-color, #666);
+        color: #fff;
+        font-family: var(--mono, ui-monospace, monospace);
+        font-size: calc(11.5px * var(--fs, 1));
+        letter-spacing: 0.06em;
+      }
+      .vt-session-badge .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.85;
+        flex-shrink: 0;
+      }
+      .vt-session-badge .lb {
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .vt-session-badge .id {
+        margin-left: auto;
+        opacity: 0.75;
+      }
+    </style>
+    <script>
+      (function () {
+        const s = window.VT_SESSION || {};
+        if (!s.label) return;
+        const seed = s.id || s.label;
+        let hue = 7;
+        for (const c of seed) hue = (hue * 31 + c.charCodeAt(0)) % 360;
+        const col = `hsl(${hue} 58% 42%)`;
+        document.title = `${s.label} · ${document.title}`;
+        try {
+          const cv = document.createElement("canvas");
+          cv.width = cv.height = 64;
+          const g = cv.getContext("2d");
+          g.fillStyle = col;
+          if (g.roundRect) {
+            g.beginPath();
+            g.roundRect(2, 2, 60, 60, 14);
+            g.fill();
+          } else {
+            g.fillRect(2, 2, 60, 60);
+          }
+          g.fillStyle = "#fff";
+          g.font = '700 38px ui-sans-serif, system-ui, "PingFang TC"';
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          const ch = (s.label.match(/[A-Za-z0-9\u4e00-\u9fff]/) || ["?"])[0];
+          g.fillText(ch.toUpperCase(), 32, 36);
+          const link = document.createElement("link");
+          link.rel = "icon";
+          link.href = cv.toDataURL();
+          document.head.appendChild(link);
+        } catch (e) {}
+        const b = document.createElement("div");
+        b.className = "vt-session-badge";
+        b.style.setProperty("--vt-session-color", col);
+        b.innerHTML =
+          '<span class="dot"></span><span class="lb"></span><span class="id"></span>';
+        b.querySelector(".lb").textContent = s.label;
+        b.querySelector(".id").textContent = s.id || "";
+        const host = document.querySelector("header") || document.body;
+        host.insertBefore(b, host.firstChild);
+      })();
+    </script>
+  <script>
+const exportDialog=document.getElementById('export-dialog');
+const exportText=document.getElementById('export-text');
+const exportStatus=document.getElementById('export-status');
+function buildSummary(){return JSON.parse(document.getElementById('summary-data').textContent)+(window.vtCollectComments?.()||'');}
+window.vtBuildDecisionExport=buildSummary;
+document.getElementById('preview-notes').addEventListener('click',()=>{exportText.value=buildSummary();exportStatus.textContent='先確認內容，再按複製。';exportDialog.showModal();exportText.setSelectionRange(0,0);exportText.scrollTop=0;});
+document.getElementById('close-export').addEventListener('click',()=>exportDialog.close());
+document.getElementById('copy-export').addEventListener('click',async()=>{const ok=await window.vtCopyText(exportText.value);exportStatus.textContent=ok?'已複製重點與本頁評論。':'無法自動複製；已選取文字，請按 Cmd+C。';if(!ok){exportText.focus();exportText.select();}});
+</script>
+
+  <!-- vt-tweaks:begin v=c10c74fa98 -->
+<style id="vt-tweaks-css">
+/* 風格設定面板 — 與 tweaks.js 成對，由 scripts/stamp.py 在 verify 時注入頁尾（作者不用複製）。
+   字級與間距的倍率靠兩個變數：--fs（字級）、--dens（間距）。stamp.py 會把頁面裡寫死的
+   px 字級與間距改成 calc(原值 * var(--fs|--dens, 1))，這裡只負責「哪些區塊不吃倍率」。 */
+
+/* 不吃倍率：結構圖、畫面樣張（它們是示意畫面，照比例縮放才對）、頁面介面本身
+   （風格設定面板、評論工具、session 徽章；字放到 200% 時還得能把它調回來）、作者手動鎖定的區塊。
+   ⚠️ 要逐一列出，不能用「class 以 vt- 開頭」：評論工具會在 body 加 vt-has-existing-export，
+   前綴比對會把整頁鎖死；被評論標記的文字（vt-comment-mark）也該跟著內文縮放。 */
+svg,
+.mock,
+[data-tw-lock],
+.vt-tw-root,
+.vt-comment-trigger,
+.vt-comment-popup,
+.vt-comment-pill,
+.vt-comment-list,
+.vt-session-badge {
+  --fs: 1;
+  --dens: 1;
+}
+/* 沒宣告字級的頁面（spec-alignment 範本就是）：零權重，任何頁面規則都蓋得過它 */
+:where(body) {
+  font-size: calc(16px * var(--fs, 1));
+}
+/* Tailwind 文字 class 的覆寫由 stamp.py 視頁面需要產生（只在有 Tailwind、倍率≠1 時生效），不放這裡 */
+
+/* ── 面板本體（按鈕與面板都掛 vt-tw-root → 在上面的排除清單裡，不吃倍率）── */
+/* 沒有底部列可停的頁：浮在左下角（右下角是評論工具） */
+.vt-tw-launch {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 9100;
+  display: flex;
+  align-items: center;
+  gap: calc(5px * var(--dens, 1));
+  font: 600 calc(12px * var(--fs, 1)) var(--sans, system-ui, sans-serif);
+  padding: calc(5px * var(--dens, 1)) calc(10px * var(--dens, 1));
+  border-radius: 999px;
+  border: 1.5px solid var(--slate, #141413);
+  background: var(--slate, #141413);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(20, 20, 19, 0.2);
+}
+.vt-tw-launch svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+/* 停在底部列「預覽摘要」左邊：外觀跟旁邊的次要按鈕一致，各寬度都停（窄螢幕只顯示圖示，見檔尾） */
+.vt-tw-launch.vt-tw-docked {
+  position: static;
+  display: inline-flex; /* 父層是一般區塊時才不會獨佔一行、把列撐高 */
+  font: 500 calc(14px * var(--fs, 1)) var(--sans, system-ui, sans-serif);
+  padding: calc(10px * var(--dens, 1)) calc(16px * var(--dens, 1));
+  border-radius: 10px;
+  border: 1.5px solid var(--g300, #d1cfc5);
+  background: #fff;
+  color: var(--slate, #141413);
+  box-shadow: none;
+}
+.vt-tw-launch.vt-tw-docked:hover {
+  border-color: var(--slate, #141413);
+}
+/* 位置（bottom、left／right、max-height）由 tweaks.js 依按鈕位置算 */
+.vt-tw-pop {
+  position: fixed;
+  width: min(330px, 92vw);
+  overflow: auto;
+  z-index: 9100;
+  background: #fff;
+  color: var(--slate, #141413);
+  border: 1.5px solid var(--g300, #d1cfc5);
+  border-radius: 12px;
+  box-shadow: 0 16px 44px rgba(20, 20, 19, 0.22);
+  padding: calc(14px * var(--dens, 1)) calc(16px * var(--dens, 1)) calc(16px * var(--dens, 1));
+  font: calc(13px * var(--fs, 1))/1.5 var(--sans, system-ui, sans-serif);
+  text-align: left;
+}
+.vt-tw-pop[hidden] {
+  display: none;
+}
+.vt-tw-sec {
+  font: 600 calc(10.5px * var(--fs, 1)) var(--mono, ui-monospace, monospace);
+  color: var(--g500, #87867f);
+  letter-spacing: 0.06em;
+  margin: calc(12px * var(--dens, 1)) 0 calc(6px * var(--dens, 1));
+  padding-top: calc(10px * var(--dens, 1));
+  border-top: 1px solid var(--g200, #e6e3da);
+}
+.vt-tw-sec.vt-tw-first {
+  border-top: 0;
+  padding-top: 0;
+  margin-top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* 中英切換：面板頂端那行的右邊 */
+.vt-tw-lang {
+  font: 600 calc(11px * var(--fs, 1)) var(--sans, system-ui, sans-serif);
+  letter-spacing: 0;
+  padding: calc(2px * var(--dens, 1)) calc(8px * var(--dens, 1));
+  border-radius: 6px;
+  border: 1.5px solid var(--g300, #d1cfc5);
+  background: #fff;
+  color: var(--g700, #3d3d3a);
+  cursor: pointer;
+}
+.vt-tw-lang:hover {
+  border-color: var(--slate, #141413);
+}
+.vt-tw-item {
+  margin: calc(8px * var(--dens, 1)) 0;
+}
+.vt-tw-label {
+  display: flex;
+  justify-content: space-between;
+  gap: calc(8px * var(--dens, 1));
+  font-weight: 600;
+  margin-bottom: calc(4px * var(--dens, 1));
+}
+.vt-tw-val {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 500;
+  color: var(--clay-d, #b85c3e);
+}
+.vt-tw-item input[type="range"] {
+  width: 100%;
+  accent-color: var(--clay, #d97757);
+}
+.vt-tw-seg {
+  display: flex;
+  border: 1.5px solid var(--g300, #d1cfc5);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.vt-tw-seg button {
+  flex: 1;
+  font: calc(12.5px * var(--fs, 1)) var(--sans, system-ui, sans-serif);
+  padding: calc(5px * var(--dens, 1)) calc(4px * var(--dens, 1));
+  border: 0;
+  border-right: 1px solid var(--g300, #d1cfc5);
+  background: #fff;
+  color: var(--g700, #3d3d3a);
+  cursor: pointer;
+}
+.vt-tw-seg button:last-child {
+  border-right: 0;
+}
+.vt-tw-seg button.vt-tw-on {
+  background: var(--slate, #141413);
+  color: #fff;
+}
+.vt-tw-hint {
+  font-size: calc(11.5px * var(--fs, 1));
+  color: var(--g500, #87867f);
+  line-height: 1.5;
+  margin-top: calc(5px * var(--dens, 1));
+}
+.vt-tw-actions {
+  display: flex;
+  gap: calc(8px * var(--dens, 1));
+  margin-top: calc(14px * var(--dens, 1));
+}
+.vt-tw-actions button {
+  flex: 1;
+  font: calc(12.5px * var(--fs, 1)) var(--sans, system-ui, sans-serif);
+  padding: calc(7px * var(--dens, 1)) calc(8px * var(--dens, 1));
+  border-radius: 8px;
+  border: 1.5px solid var(--g300, #d1cfc5);
+  background: #fff;
+  cursor: pointer;
+}
+.vt-tw-actions button.vt-tw-pri {
+  border-color: var(--clay, #d97757);
+  color: var(--clay-d, #b85c3e);
+  font-weight: 600;
+}
+.vt-tw-actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.vt-tw-manual {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: calc(8px * var(--dens, 1));
+  padding: calc(6px * var(--dens, 1)) calc(8px * var(--dens, 1));
+  font: calc(11px * var(--fs, 1))/1.5 var(--mono, ui-monospace, monospace);
+  border: 1.5px solid var(--g300, #d1cfc5);
+  border-radius: 8px;
+  resize: vertical;
+}
+.vt-tw-manual[hidden] {
+  display: none;
+}
+.vt-tw-actions button[aria-pressed="true"] {
+  background: var(--clay-d, #b85c3e);
+  border-color: var(--clay-d, #b85c3e);
+  color: #fff;
+}
+@media (max-width: 760px) {
+  .vt-tw-launch {
+    padding: calc(8px * var(--dens, 1));
+  }
+  .vt-tw-lbl {
+    display: none; /* 手機只留圖示，少蓋一點內容 */
+  }
+}
+/* 範本底部列在 900px 以下擠不下帶字的第三顆鈕：只留圖示、縮內距，高度跟旁邊的按鈕拉齊。
+   約 360px 以下、以及 700px 前後一小段寬度，列仍可能折成兩行（範圍依列上的文字與按鈕字數而定；等於更窄螢幕的版型），接受 */
+@media (max-width: 900px) {
+  .vt-tw-docked .vt-tw-lbl {
+    display: none;
+  }
+  .vt-tw-launch.vt-tw-docked {
+    padding: calc(10px * var(--dens, 1)) calc(11px * var(--dens, 1));
+    align-self: stretch;
+  }
+}
+
+</style>
+<script id="vt-tweaks-js" data-profile-tool="$HOME/.agents/skills/html-visualizer/scripts/profile.py">
+/* 風格設定面板 — 與 tweaks.css 成對，由 scripts/stamp.py 在 verify 時注入頁尾（作者不用複製）。
+ * 按鈕「風格設定」：頁面有範本底部列的「預覽摘要」（#preview-btn）就停在它左邊，各寬度都是（窄螢幕只顯示圖示）；
+ * 沒有底部列就固定在左下角（右下角是評論工具的位置）。面板從按鈕上方打開。
+ * 底部列一律用範本的，按鈕不偵測、不閃避頁面自己做的固定列。
+ * （本檔任何地方都不能出現 script 的結尾標籤字樣，否則內嵌時瀏覽器會在那裡把腳本切斷。）
+ *
+ * 固定層（每頁都有）：字級 90%–200%、密度、內容寬度，寫在 <html> 的 --fs／--dens／--wrap-max。
+ * 內容層（作者選配，預設 0 項）：頁面放一個 type 為 application/json、id 為 vt-tweaks 的 script 區塊，
+ *   內容是 [{id,label,options:[[值,顯示],...],hint}]。
+ * 選了之後在 <html> 設 data-tw-<id>="值"，作者只寫對應的 CSS，不寫 JS。hint 必填（這項會改到頁面上的什麼）。
+ * 調過的值只改畫面、不進複製摘要。讀者按「存成我的預設」才產生「設定檔變更」段落（給 AI 執行的一行
+ * profile.py 指令，使用者不用自己跑）：有拍板摘要的頁經 window.vtCollectComments 接進摘要，沒有的頁直接複製。
+ * 介面有中英兩種，面板頂端可切換（「設定檔變更」段落也跟著換語言）。
+ */
+(function () {
+  var root = document.documentElement;
+  var me = document.currentScript;
+  var tool = (me && me.getAttribute("data-profile-tool")) || "profile.py";
+  // 介面語言：讀者切換過就記在瀏覽器、之後的頁沿用；沒切過跟頁面的 lang 走。
+  // 沙盒 iframe（沒開 allow-same-origin）一碰 localStorage 就丟錯，所以包 try
+  var lang = null;
+  try {
+    lang = localStorage.getItem("vt-tw-lang");
+  } catch (e) {}
+  if (lang !== "zh" && lang !== "en") lang = /^en/i.test(root.lang) ? "en" : "zh";
+  var LANG = {
+    zh: {
+      name: "風格設定",
+      short: "風格設定",
+      title: "風格設定（字級、密度、寬度）",
+      fixed: "固定層 · 每頁都有",
+      content: "內容層 · 這頁專屬",
+      swap: "EN",
+      reset: "全部還原",
+      save: "存成我的預設",
+      added: "已加進複製摘要",
+      copied: "已複製，貼回對話即可",
+      select: "已選取，請按 Cmd+C",
+      need: function (n) {
+        return "調過" + n.slice(0, -1).join("、") + "或" + n[n.length - 1] + "，才能存成你的預設。";
+      },
+      undo: "存檔指令已加進這頁的複製摘要，複製後貼回對話即可；再按一次取消。",
+      toSummary: "按下後，存檔指令會加進這頁的複製摘要；貼回對話，AI 會寫進你的設定檔，之後的頁都用這組。",
+      toCopy: "按下後會複製一段指令；貼回對話，AI 會寫進你的設定檔，之後的頁都用這組。",
+      head: "## 設定檔變更\n給 AI：使用者要把這頁的顯示設定存成預設（",
+      pair: "：",
+      join: "、",
+      tail: "）。請執行下面這行寫入 html-visualizer 設定檔，完成後回報前後差異；使用者不用自己跑。\n",
+    },
+    en: {
+      name: "Style settings",
+      short: "Style",
+      title: "Style settings (text size, density, width)",
+      fixed: "Every page",
+      content: "This page only",
+      swap: "中文",
+      reset: "Reset all",
+      save: "Save as my default",
+      added: "Added to summary",
+      copied: "Copied",
+      select: "Press Cmd+C",
+      need: function (n) {
+        n = n.map(function (x) {
+          return x.toLowerCase();
+        });
+        return "Change the " + n.slice(0, -1).join(", ") + " or " + n[n.length - 1] + " to save it as your default.";
+      },
+      undo: "The save command is in this page's copy summary. Copy the summary and paste it into the chat. Click again to remove it.",
+      toSummary: "Adds a save command to this page's copy summary. Paste it into the chat and the AI writes it to your profile; later pages use these settings.",
+      toCopy: "Copies a save command. Paste it into the chat and the AI writes it to your profile; later pages use these settings.",
+      head: "## Profile changes\nFor the AI: the user wants to save this page's display settings as their default (",
+      pair: ": ",
+      join: ", ",
+      tail: "). Run the line below to write them to the html-visualizer profile, then report the before and after values. The user doesn't need to run it.\n",
+    },
+  };
+  var L = LANG[lang];
+  // 固定層的名稱與選項是 {zh, en}；作者寫的內容層（字串或數字）原樣顯示
+  function txt(x) {
+    return x && typeof x === "object" ? x[lang] : x;
+  }
+  var cs = getComputedStyle(root);
+  function cssNum(name, fallback) {
+    var v = parseFloat(cs.getPropertyValue(name));
+    return isNaN(v) ? fallback : v;
+  }
+  var baseFs = cssNum("--fs", 1);
+  var DENS = [
+    ["0.75", { zh: "緊湊", en: "Compact" }, "compact"],
+    ["1", { zh: "標準", en: "Standard" }, "standard"],
+    ["1.3", { zh: "寬鬆", en: "Relaxed" }, "relaxed"],
+  ];
+  var baseDens = String(cssNum("--dens", 1));
+  if (!DENS.some(function (d) { return d[0] === baseDens; })) baseDens = "1";
+  // 內容寬度只在頁面有用 --wrap-max 時提供（範本在 :root 宣告它）；沒宣告的頁按了也不會動，乾脆不顯示
+  var rawWrap = cs.getPropertyValue("--wrap-max").trim();
+  var baseWrap = parseFloat(rawWrap) || 1760;
+  var wrapOpts = [
+    ["1760px", { zh: "滿版", en: "Full" }, "1760"],
+    ["1080px", { zh: "閱讀寬", en: "Reading" }, "1080"],
+  ];
+  if (baseWrap !== 1760 && baseWrap !== 1080) wrapOpts.unshift([baseWrap + "px", { zh: "預設", en: "Default" }, String(baseWrap)]);
+  var FIXED = [
+    { id: "fs", label: { zh: "字級", en: "Text size" }, kind: "range", min: 0.9, max: 2, step: 0.05, def: String(baseFs), css: "--fs", profile: "tokens.type.scale" },
+    { id: "dens", label: { zh: "密度", en: "Density" }, css: "--dens", def: baseDens, profile: "tokens.layout.density", options: DENS },
+  ];
+  if (rawWrap) {
+    FIXED.push({ id: "width", label: { zh: "內容寬度", en: "Width" }, css: "--wrap-max", def: baseWrap + "px", profile: "tokens.layout.maxWidth", options: wrapOpts });
+  }
+  // html.vt-fs：倍率≠1 時才讓 Tailwind 文字 class 的覆寫生效（stamp.py 產生的規則都掛在它底下）
+  root.classList.toggle("vt-fs", baseFs !== 1);
+  var content = [];
+  // 用 querySelector：沒有內容層的頁面本來就沒有這個元素，不該被 verify 的元素參照檢查報成缺漏
+  var decl = document.querySelector("script#vt-tweaks");
+  if (decl) {
+    try {
+      content = JSON.parse(decl.textContent);
+    } catch (e) {
+      console.error("vt-tweaks 宣告不是合法 JSON", e);
+    }
+  }
+  content = content.filter(function (c) {
+    var ok =
+      c && c.id && c.label && Array.isArray(c.options) && c.options.length >= 2;
+    if (!ok) console.error("vt-tweaks 項目缺 id／label／options", c);
+    else if (!c.hint)
+      console.error(
+        "vt-tweaks 項目缺 hint（要寫這項會改到頁面上的什麼）",
+        c.id,
+      );
+    return ok;
+  });
+  if (content.length > 3) {
+    console.error("vt-tweaks 最多 3 項，多的不顯示");
+    content = content.slice(0, 3);
+  }
+  content.forEach(function (c) {
+    c.attr = "data-tw-" + c.id;
+    c.def = String(c.options[0][0]);
+  });
+  var ALL = FIXED.concat(content);
+  var saved = false; // 按過「存成我的預設」（只在有拍板摘要的頁用得到）
+  var state = {};
+  ALL.forEach(function (t) {
+    state[t.id] = t.def;
+  });
+
+  function label(t, v) {
+    if (t.kind === "range") return Math.round(parseFloat(v) * 100) + "%";
+    for (var i = 0; i < t.options.length; i++)
+      if (String(t.options[i][0]) === v) return txt(t.options[i][1]);
+    return v;
+  }
+  function apply(t) {
+    if (t.css) root.style.setProperty(t.css, state[t.id]);
+    if (t.attr) root.setAttribute(t.attr, state[t.id]);
+    if (t.id === "fs") root.classList.toggle("vt-fs", parseFloat(state.fs) !== 1);
+  }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  // 切換語言時要重寫的文字：登記時先畫一次，切換時全部重跑
+  var paint = [];
+  function painted(fn) {
+    paint.push(fn);
+    fn();
+  }
+  // 頁面自己的介面文字（範本底部列的按鈕等）也跟著換：元素寫 data-en="英文"，原本的中文第一次換掉前先存進 data-zh。
+  // <html data-vt-lang> 給頁面腳本讀，組執行期文字（例如「已複製」）時用
+  painted(function () {
+    root.setAttribute("data-vt-lang", lang);
+    document.querySelectorAll("[data-en]").forEach(function (e) {
+      if (!e.hasAttribute("data-zh")) e.setAttribute("data-zh", e.textContent);
+      e.textContent = e.getAttribute(lang === "en" ? "data-en" : "data-zh");
+    });
+  });
+
+  var launch = el("button", "vt-tw-launch vt-tw-root");
+  launch.type = "button";
+  launch.setAttribute("aria-expanded", "false");
+  launch.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/></svg>';
+  var lbl = launch.appendChild(el("span", "vt-tw-lbl"));
+  var pop = el("aside", "vt-tw-pop vt-tw-root");
+  pop.hidden = true;
+  painted(function () {
+    launch.setAttribute("aria-label", L.name);
+    launch.title = L.title;
+    lbl.textContent = L.short;
+    pop.setAttribute("aria-label", L.name);
+  });
+
+  function control(t) {
+    var wrap = el("div", "vt-tw-item");
+    var lab = el("div", "vt-tw-label");
+    var name = lab.appendChild(el("span"));
+    var val = el("span", "vt-tw-val");
+    lab.appendChild(val);
+    wrap.appendChild(lab);
+    function sync() {
+      val.textContent = label(t, state[t.id]);
+    }
+    if (t.kind === "range") {
+      var r = el("input");
+      r.type = "range";
+      r.min = t.min;
+      r.max = t.max;
+      r.step = t.step;
+      r.value = state[t.id];
+      r.addEventListener("input", function () {
+        state[t.id] = r.value;
+        apply(t);
+        sync();
+        refreshSave();
+      });
+      wrap.appendChild(r);
+      t.reset = function () {
+        r.value = t.def;
+      };
+    } else {
+      var seg = el("div", "vt-tw-seg");
+      t.options.forEach(function (o) {
+        var b = el("button");
+        b.type = "button";
+        painted(function () {
+          b.textContent = txt(o[1]);
+        });
+        b.setAttribute("data-v", String(o[0]));
+        b.addEventListener("click", function () {
+          state[t.id] = String(o[0]);
+          apply(t);
+          mark();
+          sync();
+          refreshSave();
+        });
+        seg.appendChild(b);
+      });
+      function mark() {
+        seg.querySelectorAll("button").forEach(function (b) {
+          b.classList.toggle(
+            "vt-tw-on",
+            b.getAttribute("data-v") === state[t.id],
+          );
+        });
+      }
+      mark();
+      t.reset = mark;
+      wrap.appendChild(seg);
+    }
+    if (t.hint) wrap.appendChild(el("div", "vt-tw-hint", t.hint));
+    t.sync = sync;
+    painted(function () {
+      name.textContent = txt(t.label);
+      if (r) r.setAttribute("aria-label", txt(t.label));
+      sync();
+    });
+    return wrap;
+  }
+  var first = pop.appendChild(el("div", "vt-tw-sec vt-tw-first"));
+  var firstText = first.appendChild(el("span"));
+  var langBtn = first.appendChild(el("button", "vt-tw-lang"));
+  langBtn.type = "button";
+  painted(function () {
+    firstText.textContent = L.fixed;
+    langBtn.textContent = L.swap;
+  });
+  FIXED.forEach(function (t) {
+    pop.appendChild(control(t));
+  });
+  if (content.length) {
+    var sec = pop.appendChild(el("div", "vt-tw-sec"));
+    painted(function () {
+      sec.textContent = L.content;
+    });
+    content.forEach(function (t) {
+      pop.appendChild(control(t));
+    });
+  }
+  var actions = el("div", "vt-tw-actions");
+  var resetBtn = el("button");
+  resetBtn.type = "button";
+  painted(function () {
+    resetBtn.textContent = L.reset;
+  });
+  var saveBtn = el("button", "vt-tw-pri");
+  saveBtn.type = "button";
+  actions.appendChild(resetBtn);
+  actions.appendChild(saveBtn);
+  pop.appendChild(actions);
+  var saveHint = el("div", "vt-tw-hint");
+  pop.appendChild(saveHint);
+  // 複製不到時的出路：指令放進這裡並全選，使用者按 Cmd+C（純展示頁沒有頁面自帶的複製函式）
+  var manual = el("textarea", "vt-tw-manual");
+  manual.readOnly = true;
+  manual.rows = 4;
+  manual.hidden = true;
+  pop.appendChild(manual);
+  var flashTimer = null;
+
+  function changedFixed() {
+    return FIXED.filter(function (t) {
+      return state[t.id] !== t.def;
+    });
+  }
+  function profileValue(t, v) {
+    if (t.options) {
+      for (var i = 0; i < t.options.length; i++)
+        if (String(t.options[i][0]) === v) return t.options[i][2];
+    }
+    return String(Math.round(parseFloat(v) * 100) / 100);
+  }
+  function hasSummary() {
+    return typeof window.vtBuildDecisionExport === "function";
+  }
+  function saveText(ch) {
+    return (
+      L.head +
+      ch
+        .map(function (t) {
+          return txt(t.label) + L.pair + label(t, state[t.id]);
+        })
+        .join(L.join) +
+      L.tail +
+      // 雙引號：路徑以 $HOME 開頭，單引號裡不會展開
+      'python3 "' +
+      tool +
+      '" set ' +
+      ch
+        .map(function (t) {
+          return t.profile + "=" + profileValue(t, state[t.id]);
+        })
+        .join(" ")
+    );
+  }
+  function refreshSave() {
+    var n = changedFixed().length;
+    // 只看目前的值：拖滑桿途中經過預設值那一格不該把已存取消
+    var on = saved && n > 0;
+    // 失敗時留下的文字框：設定一變，裡面的指令就過時了
+    if (!manual.hidden && manual.value !== saveText(changedFixed())) manual.hidden = true;
+    saveBtn.disabled = !n;
+    if (hasSummary()) saveBtn.setAttribute("aria-pressed", String(on));
+    saveBtn.textContent = on ? L.added : L.save;
+    saveHint.textContent = !n
+      ? L.need(FIXED.map(function (t) {
+          return txt(t.label);
+        }))
+      : on
+        ? L.undo
+        : hasSummary()
+        ? L.toSummary
+        : L.toCopy;
+  }
+  window.vtCollectTweaks = function () {
+    var ch = changedFixed();
+    return saved && ch.length ? "\n\n" + saveText(ch) : "";
+  };
+  resetBtn.addEventListener("click", function () {
+    saved = false;
+    ALL.forEach(function (t) {
+      state[t.id] = t.def;
+      apply(t);
+      t.reset();
+      t.sync();
+    });
+    refreshSave();
+  });
+  saveBtn.addEventListener("click", async function () {
+    if (hasSummary()) {
+      saved = !saved;
+      refreshSave();
+      return;
+    }
+    // 沒有拍板摘要的頁：按鈕本身就是出口，直接複製
+    var text = saveText(changedFixed());
+    var ok = false;
+    manual.hidden = true;
+    if (window.vtCopyText) ok = await window.vtCopyText(text);
+    // 沒有頁面的複製函式就直接走下面：在點擊當下同步複製，不先 await 別的 API 把使用者手勢耗掉
+    if (!ok) {
+      manual.value = text;
+      manual.hidden = false;
+      manual.select();
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {}
+      if (ok) manual.hidden = true;
+    }
+    saveBtn.textContent = ok ? L.copied : L.select;
+    clearTimeout(flashTimer); // 連點時舊計時器不能提早蓋掉新回饋
+    flashTimer = setTimeout(refreshSave, ok ? 2000 : 6000);
+  });
+  // 面板開在按鈕上方：按鈕在右半就右緣對齊、左半就左緣對齊；
+  // 按鈕上方不到 200px（視窗矮、底部列展開）就改貼畫面頂端，不讓面板頂端跑出畫面
+  function place() {
+    var r = launch.getBoundingClientRect();
+    var w = Math.min(330, window.innerWidth * 0.92);
+    var x = r.left + r.width / 2 > window.innerWidth / 2 ? r.right - w : r.left;
+    // 預覽鈕在列中間時（非範本的列）對齊邊緣會出界，夾回畫面內
+    pop.style.left = Math.max(8, Math.min(x, window.innerWidth - w - 8)) + "px";
+    var low = r.top - 24 < 200;
+    pop.style.top = low ? "12px" : "auto";
+    pop.style.bottom = low ? "auto" : window.innerHeight - r.top + 10 + "px";
+    pop.style.maxHeight = (low ? window.innerHeight - 24 : r.top - 24) + "px";
+  }
+  langBtn.addEventListener("click", function () {
+    lang = lang === "zh" ? "en" : "zh";
+    L = LANG[lang];
+    try {
+      localStorage.setItem("vt-tw-lang", lang);
+    } catch (e) {}
+    paint.forEach(function (f) {
+      f();
+    });
+    refreshSave();
+  });
+  function setOpen(open) {
+    if (open) place();
+    pop.hidden = !open;
+    launch.setAttribute("aria-expanded", String(open));
+  }
+  launch.addEventListener("click", function () {
+    setOpen(pop.hidden);
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape" && !pop.hidden) setOpen(false);
+  });
+  document.addEventListener("click", function (ev) {
+    // 用事件當下的路徑判斷（按鈕若在點擊後被重畫移除，closest 會找不到而誤關）
+    var inside = ev.composedPath().some(function (el) {
+      return el.classList && el.classList.contains("vt-tw-root");
+    });
+    if (!pop.hidden && !inside) setOpen(false);
+  });
+  // 把「設定檔變更」段接進評論收集函式：所有複製摘要都已經照規定拼接它，不必逐一改寫
+  function hook() {
+    var orig = window.vtCollectComments;
+    window.vtCollectComments = function () {
+      return window.vtCollectTweaks() + (orig ? orig() : "");
+    };
+  }
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", hook);
+  else hook();
+  // querySelector：頁面沒有預覽鈕是正常的，不該讓 verify 的元素參照檢查報缺漏（同上方 vt-tweaks 的寫法）
+  var dock = document.querySelector("#preview-btn");
+  document.body.appendChild(pop);
+  if (dock) {
+    launch.classList.add("vt-tw-docked");
+    dock.parentNode.insertBefore(launch, dock);
+  } else document.body.insertBefore(launch, pop); // Tab 順序：按鈕→面板
+  // 縮放、捲動時按鈕會跟著列移動（捲到頁尾，列會被頁尾往上推），開著的面板要跟著對齊
+  function follow() {
+    if (!pop.hidden) place();
+  }
+  window.addEventListener("resize", follow);
+  window.addEventListener("scroll", follow, { passive: true });
+  refreshSave();
+})();
+
+</script>
+<!-- vt-tweaks:end -->
+</body>
+</html>
